@@ -1,6 +1,6 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
-
+import Footer from '../components/Footer';
 import { motion } from 'framer-motion';
 import { ArrowRight, Zap, Users, Trophy, Target, Clock, Sparkles, TrendingUp, Award, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -359,7 +359,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-
+            <Footer />
         </div>
     );
 };

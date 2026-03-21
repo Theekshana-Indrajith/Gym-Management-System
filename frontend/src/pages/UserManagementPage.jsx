@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { UserPlus, User, Trash2, Edit2, Shield, Crown, Dumbbell, Users, LayoutDashboard } from 'lucide-react';
+import { UserPlus, User, Trash2, Shield, Crown, Dumbbell, Users, LayoutDashboard, CheckCircle, XCircle, Search } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -18,6 +18,7 @@ const UserManagementPage = ({ role }) => {
     const [isEditing, setIsEditing] = useState(null);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -57,6 +58,30 @@ const UserManagementPage = ({ role }) => {
         e.preventDefault();
         setMessage('');
         setError('');
+
+        // 1. Name/Username Validation: No numbers allowed
+        const nameRegex = /^[A-Za-z\s]+$/;
+        if (!nameRegex.test(formData.username)) {
+            setError("Names/Usernames should only contain letters. Numbers are not allowed.");
+            return;
+        }
+
+        // 2. Email Validation: Simple regex
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            setError("Please enter a valid email address (e.g. user@example.com).");
+            return;
+        }
+
+        // 3. Password Validation: At least 6 characters
+        // Only validate if it's a new user OR if the user is typing a new password while editing
+        if (!isEditing || (isEditing && formData.password.length > 0)) {
+            if (formData.password.length < 6) {
+                setError("Security Alert: Password must be at least 6 characters long.");
+                return;
+            }
+        }
+
         try {
             const auth = JSON.parse(localStorage.getItem('auth'));
             const dataToSend = { ...formData, role: role };
@@ -80,6 +105,30 @@ const UserManagementPage = ({ role }) => {
         }
     };
 
+    const handleToggleStatus = async (id) => {
+        try {
+            const auth = JSON.parse(localStorage.getItem('auth'));
+            await axios.post(`http://localhost:8080/api/admin/users/${id}/toggle-status`, {}, {
+                headers: { Authorization: auth }
+            });
+            fetchUsers();
+        } catch (err) {
+            alert("Failed to change user status");
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure?")) return;
+        try {
+            const auth = JSON.parse(localStorage.getItem('auth'));
+            await axios.delete(`http://localhost:8080/api/admin/users/${id}`, {
+                headers: { Authorization: auth }
+            });
+            setUsers(users.filter(u => u.id !== id));
+        } catch (err) {
+            alert("Failed to delete user");
+        }
+    };
 
     const handleEdit = (user) => {
         setFormData({ username: user.username, email: user.email, password: '', role: user.role });
@@ -135,6 +184,19 @@ const UserManagementPage = ({ role }) => {
                     </div>
                 </header>
 
+                <div className="mb-8">
+                    <div className="max-w-xl relative group">
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                        <input 
+                            type="text" 
+                            placeholder={`Search ${roleName.toLowerCase()}s by username...`}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-16 pr-6 py-5 bg-white rounded-3xl border border-slate-100 shadow-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+                        />
+                    </div>
+                </div>
+
                 <div className="grid lg:grid-cols-3 gap-8 items-start">
                     {/* Form Section */}
                     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100 col-span-1 border-b-4 border-blue-500">
@@ -172,7 +234,7 @@ const UserManagementPage = ({ role }) => {
 
                     {/* List Section */}
                     <div className="col-span-1 lg:col-span-2 space-y-4">
-                        {users.map((user) => (
+                        {users.filter(user => user.username.toLowerCase().includes(searchQuery.toLowerCase())).map((user) => (
                             <motion.div layout key={user.id} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex justify-between items-center hover:shadow-md transition-all group">
                                 <div className="flex items-center gap-5">
                                     <div className={`p-4 rounded-2xl ${role === 'ADMIN' ? 'bg-purple-50 text-purple-600' : role === 'TRAINER' ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600'}`}>
@@ -181,13 +243,25 @@ const UserManagementPage = ({ role }) => {
                                     <div>
                                         <h4 className="font-bold text-slate-900 text-lg">{user.username}</h4>
                                         <div className="flex items-center gap-2 text-slate-400 text-sm">
-                                            <Mail size={14} /> {user.email}
+                                            <MailIcon size={14} /> {user.email}
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                    <button onClick={() => handleEdit(user)} title="Edit User" className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all">
-                                        <Edit2 size={20} />
+                                <div className="flex items-center gap-3">
+                                    <div className="flex flex-col items-end mr-4">
+                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${user.isActive ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                                            {user.isActive ? 'Access Granted' : 'Access Revoked'}
+                                        </span>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleToggleStatus(user.id)} 
+                                        title={user.isActive ? "Deactivate User" : "Activate User"}
+                                        className={`p-3 rounded-2xl transition-all ${user.isActive ? 'text-emerald-500 hover:bg-emerald-50' : 'text-red-400 hover:bg-red-50'}`}
+                                    >
+                                        {user.isActive ? <CheckCircle size={20} /> : <XCircle size={20} />}
+                                    </button>
+                                    <button onClick={() => handleDelete(user.id)} title="Delete User" className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all">
+                                        <Trash2 size={20} />
                                     </button>
                                 </div>
                             </motion.div>
@@ -207,7 +281,6 @@ const UserManagementPage = ({ role }) => {
     );
 };
 
-const CheckCircle = ({ size }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
-const Mail = ({ size }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>;
+const MailIcon = ({ size }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>;
 
 export default UserManagementPage;

@@ -28,6 +28,11 @@ public class MembershipAdminController {
         return ResponseEntity.ok(membershipService.createPackage(pkg));
     }
 
+    @PutMapping("/packages/{id}")
+    public ResponseEntity<MembershipPackage> updatePackage(@PathVariable Long id, @RequestBody MembershipPackage pkg) {
+        return ResponseEntity.ok(membershipService.updatePackage(id, pkg));
+    }
+
     @DeleteMapping("/packages/{id}")
     public ResponseEntity<?> deletePackage(@PathVariable Long id) {
         membershipService.deletePackage(id);

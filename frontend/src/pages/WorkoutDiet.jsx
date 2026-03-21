@@ -1,6 +1,6 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
-
+import Footer from '../components/Footer';
 import { motion } from 'framer-motion';
 import { Brain, Activity, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -151,7 +151,7 @@ const WorkoutDiet = () => {
                 </div>
             </section>
 
-
+            <Footer />
         </div>
     );
 };

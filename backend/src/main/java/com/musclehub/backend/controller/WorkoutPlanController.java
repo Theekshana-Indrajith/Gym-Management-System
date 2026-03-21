@@ -1,52 +1,98 @@
 package com.musclehub.backend.controller;
 
 import com.musclehub.backend.entity.WorkoutPlan;
-import com.musclehub.backend.repository.WorkoutPlanRepository;
+import com.musclehub.backend.service.WorkoutPlanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/workout-plans")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class WorkoutPlanController {
 
-    private final WorkoutPlanRepository workoutPlanRepository;
+    private final WorkoutPlanService workoutPlanService;
 
     @GetMapping
-    public List<WorkoutPlan> getAllPlans() {
-        return workoutPlanRepository.findAll();
+    public ResponseEntity<?> getAllPlans() {
+        try {
+            return ResponseEntity.ok(workoutPlanService.getAllPlans());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(null);
+        }
     }
 
     @GetMapping("/member/{memberId}")
-    public List<WorkoutPlan> getMemberPlans(@PathVariable Long memberId) {
-        return workoutPlanRepository.findByMemberId(memberId);
+    public ResponseEntity<?> getMemberPlans(@PathVariable Long memberId) {
+        try {
+            return ResponseEntity.ok(workoutPlanService.getMemberPlans(memberId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    @GetMapping("/trainer/{trainerId}")
+    public ResponseEntity<?> getTrainerPlans(@PathVariable Long trainerId) {
+        try {
+            return ResponseEntity.ok(workoutPlanService.getTrainerPlans(trainerId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(null);
+        }
     }
 
     @PostMapping
-    public WorkoutPlan createPlan(@RequestBody WorkoutPlan plan) {
-        return workoutPlanRepository.save(plan);
+    public WorkoutPlan createPlan(@RequestBody WorkoutPlan plan,
+            org.springframework.security.core.Authentication authentication) {
+        return workoutPlanService.createOrAssignPlan(plan, authentication.getName());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deletePlan(@PathVariable Long id) {
-        workoutPlanRepository.deleteById(id);
+    public ResponseEntity<?> deletePlan(@PathVariable Long id,
+            org.springframework.security.core.Authentication authentication) {
+        workoutPlanService.deletePlan(id, authentication.getName());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/ai-generate")
-    public ResponseEntity<?> generateAIPlan(@RequestBody Long memberId) {
-        // Mock AI Generation Logic - To be integrated with Python Model later
-        // This simulates 'Step 3' of the user's request
-        WorkoutPlan aiPlan = new WorkoutPlan();
-        aiPlan.setPlanName("AI Recommended Routine");
-        aiPlan.setIsAiGenerated(true);
-        aiPlan.setExercises(
-                "1. Pushups 3x15\n2. Squats 3x20\n3. Planks 3x1min\n(AI Analysis based on BMI and Health Conditions)");
-        aiPlan.setGoal("Optimized Recovery & Strength");
-
+    public ResponseEntity<?> generateAIPlan(@RequestBody Long memberId,
+            org.springframework.security.core.Authentication authentication) {
+        WorkoutPlan aiPlan = workoutPlanService.triggerAiGeneration(memberId, authentication.getName());
         return ResponseEntity.ok(aiPlan);
+    }
+
+    @PostMapping("/log")
+    public ResponseEntity<?> logActivity(@RequestBody java.util.Map<String, Object> payload,
+            org.springframework.security.core.Authentication authentication) {
+        java.time.LocalDate logDate = payload.containsKey("logDate") 
+            ? java.time.LocalDate.parse(payload.get("logDate").toString()) 
+            : java.time.LocalDate.now();
+            
+        workoutPlanService.logWorkoutActivity(
+                authentication.getName(),
+                Long.valueOf(payload.get("planId").toString()),
+                payload.get("exercisesJson").toString(),
+                Double.valueOf(payload.get("percentage").toString()),
+                logDate);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/weekly-summary")
+    public ResponseEntity<?> getWeeklySummary(
+            @RequestParam(required = false) Long planId,
+            org.springframework.security.core.Authentication authentication) {
+        return ResponseEntity.ok(workoutPlanService.getWeeklyPerformanceSummary(authentication.getName(), planId));
+    }
+
+    @GetMapping("/member/{memberId}/performance")
+    public ResponseEntity<?> getMemberPerformance(
+            @PathVariable Long memberId,
+            @RequestParam(required = false) Long planId) {
+        // Find user by id first to get username
+        com.musclehub.backend.entity.User member = workoutPlanService.getUserById(memberId);
+        return ResponseEntity.ok(workoutPlanService.getWeeklyPerformanceSummary(member.getUsername(), planId));
     }
 }
