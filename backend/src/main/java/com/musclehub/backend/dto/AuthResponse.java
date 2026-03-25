@@ -8,8 +8,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class AuthResponse {
     private String message;
-    private Long id;
     private String username;
     private User.Role role;
-    // can add token here if implementing JWT
+    private Long id;
 }

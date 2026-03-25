@@ -41,8 +41,42 @@ public class MembershipService {
         return packageRepository.save(pkg);
     }
 
+    @Transactional
     public void deletePackage(Long id) {
-        packageRepository.deleteById(id);
+        if (id == null) return;
+        
+        MembershipPackage existingPkg = packageRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Package not found"));
+        
+        // Check if members are using this package
+        long userCount = userRepository.findAllByRole(User.Role.MEMBER).stream()
+                .filter(u -> u.getActivePackage() != null && id.equals(u.getActivePackage().getId()))
+                .count();
+
+        if (userCount > 0) {
+            throw new RuntimeException("Cannot delete package: " + userCount + " members are currently assigned to it.");
+        }
+
+        // Check if there are any membership requests (even rejected/pending) for this package
+        // This avoids foreign key constraint violations
+        if (requestRepository.findAll().stream().anyMatch(r -> r.getMembershipPackage() != null && id.equals(r.getMembershipPackage().getId()))) {
+            throw new RuntimeException("Cannot delete package: Historical requests exist for this plan. Please HIDE it instead.");
+        }
+        
+        packageRepository.delete(existingPkg);
+    }
+
+    @Transactional
+    public MembershipPackage updatePackage(Long id, MembershipPackage updatedPkg) {
+        MembershipPackage existing = packageRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Package not found"));
+        
+        // Manual copy to ensure we don't overwrite ID or financial fields
+        existing.setName(updatedPkg.getName());
+        existing.setDescription(updatedPkg.getDescription());
+        existing.setIsActive(updatedPkg.getIsActive());
+        
+        return packageRepository.saveAndFlush(existing);
     }
 
     // Requests Management (Admin)
@@ -118,7 +152,17 @@ public class MembershipService {
 
     @Transactional
     public void deactivateMembership(Long userId) {
+        if (userId == null) return;
         User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setMembershipStatus(User.MembershipStatus.NONE);
+        user.setActivePackage(null);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void cancelMembership(String username) {
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setMembershipStatus(User.MembershipStatus.NONE);
         user.setActivePackage(null);

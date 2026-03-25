@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Menu, X, Dumbbell, ShoppingBag, Tag, User, Phone, Home, Info, MapPin } from 'lucide-react';
+import { Menu, X, Dumbbell, ShoppingBag, Tag, User, Phone, Home, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Navbar = () => {
@@ -19,13 +19,13 @@ const Navbar = () => {
         { name: 'Home', href: '/', icon: Home },
         { name: 'Workout & Diet', href: '/workout-diet', icon: Dumbbell },
         { name: 'Offers', href: '/offers', icon: Tag },
-        { name: 'Location', href: '/location', icon: MapPin },
+        { name: 'Shop', href: '/shop', icon: ShoppingBag },
         { name: 'About Us', href: '/about', icon: Info },
         { name: 'Contact', href: '/contact', icon: Phone },
     ];
 
     return (
-        <nav className={`fixed w-full z-50 transition-all duration-300 bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 ${scrolled ? 'py-2' : 'py-4'}`}>
+        <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-lg py-2' : 'bg-transparent py-4'}`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}

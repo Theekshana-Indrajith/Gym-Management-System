@@ -18,9 +18,8 @@ public class AdminService {
     private final EquipmentRepository equipmentRepository;
     private final SupplementRepository supplementRepository;
     private final InquiryRepository inquiryRepository;
-    private final MembershipRequestRepository membershipRequestRepository;
-    private final SupplementOrderRepository supplementOrderRepository;
-    private final AttendanceRepository attendanceRepository;
+    private final MaintenanceLogRepository maintenanceLogRepository;
+    private final NotificationRepository notificationRepository;
 
     public List<UserDTO> getAllUsersByRole(User.Role role) {
         return userRepository.findAllByRole(role).stream()
@@ -32,36 +31,21 @@ public class AdminService {
         long admins = userRepository.findAllByRole(User.Role.ADMIN).size();
         long trainers = userRepository.findAllByRole(User.Role.TRAINER).size();
         long members = userRepository.findAllByRole(User.Role.MEMBER).size();
-
-        java.time.LocalDateTime startOfMonth = java.time.LocalDateTime.now()
-                .withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
-
-        double membershipRevenue = membershipRequestRepository.findAllByStatus(MembershipRequest.Status.APPROVED)
-                .stream()
-                .filter(req -> req.getProcessedDate() != null && req.getProcessedDate().isAfter(startOfMonth))
-                .mapToDouble(
-                        req -> (req.getMembershipPackage() != null && req.getMembershipPackage().getPrice() != null)
-                                ? req.getMembershipPackage().getPrice()
-                                : 0.0)
-                .sum();
-
-        double supplementRevenue = supplementOrderRepository.findAll().stream()
-                .filter(order -> order.getOrderDate() != null && order.getOrderDate().isAfter(startOfMonth))
-                .mapToDouble(order -> order.getTotalPrice() != null ? order.getTotalPrice() : 0.0)
-                .sum();
-
-        double totalRevenue = membershipRevenue + supplementRevenue;
-
-        long lowStock = supplementRepository.findByStockLessThan(10).size();
-        long checkins = attendanceRepository.findByDate(java.time.LocalDate.now()).size();
-
-        return new DashboardStats(admins, trainers, members, totalRevenue, lowStock, checkins);
+        return new DashboardStats(admins, trainers, members);
     }
 
     public void deleteUser(Long id) {
         if (id == null)
             return;
         userRepository.deleteById(id);
+    }
+
+    public UserDTO toggleUserStatus(Long id) {
+        if (id == null)
+            throw new RuntimeException("ID is null");
+        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        user.setIsActive(!user.getIsActive());
+        return new UserDTO(userRepository.save(user));
     }
 
     public AuthResponse addUser(RegisterRequest request) {
@@ -74,7 +58,7 @@ public class AdminService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(request.getRole());
         userRepository.save(user);
-        return new AuthResponse("User added successfully", user.getId(), user.getUsername(), user.getRole());
+        return new AuthResponse("User added successfully", user.getUsername(), user.getRole(), user.getId());
     }
 
     public void assignTrainerToMember(Long memberId, Long trainerId) {
@@ -86,7 +70,7 @@ public class AdminService {
         userRepository.save(member);
     }
 
-    // Equipment Management
+    // Equipment Management (Advanced Owner/Admin Control)
     public List<Equipment> getAllEquipment() {
         return equipmentRepository.findAll();
     }
@@ -97,17 +81,25 @@ public class AdminService {
         return equipmentRepository.save(equipment);
     }
 
-    public Equipment updateEquipment(Long id, Equipment updated) {
+    public Equipment updateEquipment(Long id, Equipment data) {
+        if (id == null)
+            throw new RuntimeException("ID is null");
         Equipment existing = equipmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Equipment not found"));
-        if (updated.getName() != null)
-            existing.setName(updated.getName());
-        if (updated.getStatus() != null)
-            existing.setStatus(updated.getStatus());
-        if (updated.getLastMaintenanceDate() != null)
-            existing.setLastMaintenanceDate(updated.getLastMaintenanceDate());
-        if (updated.getNextMaintenanceDate() != null)
-            existing.setNextMaintenanceDate(updated.getNextMaintenanceDate());
+
+        existing.setName(data.getName());
+        existing.setBrand(data.getBrand());
+        existing.setSerialNumber(data.getSerialNumber());
+        existing.setLocation(data.getLocation());
+        existing.setStatus(data.getStatus());
+        existing.setEquipmentCondition(data.getEquipmentCondition());
+        existing.setNextMaintenanceDate(data.getNextMaintenanceDate());
+        existing.setCost(data.getCost());
+        
+        // Alternative Recommendation Sync
+        existing.setAlternativeId(data.getAlternativeId());
+        existing.setAlternativeName(data.getAlternativeName());
+
         return equipmentRepository.save(existing);
     }
 
@@ -115,6 +107,64 @@ public class AdminService {
         if (id == null)
             return;
         equipmentRepository.deleteById(id);
+    }
+
+    public void deactivateEquipment(Long id) {
+        if (id == null)
+            throw new RuntimeException("ID is null");
+        Equipment existing = equipmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Equipment not found"));
+        existing.setStatus(Equipment.Status.DEACTIVATED);
+        equipmentRepository.save(existing);
+    }
+
+    public void resolveEquipment(Long equipmentId, String adminUsername, String action, String notes, Double cost) {
+        if (equipmentId == null)
+            throw new RuntimeException("ID is null");
+        Equipment existing = equipmentRepository.findById(equipmentId)
+                .orElseThrow(() -> new RuntimeException("Equipment not found"));
+        User admin = userRepository.findByUsername(adminUsername)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        existing.setStatus(Equipment.Status.WORKING);
+        existing.setLastMaintenanceDate(java.time.LocalDate.now());
+        equipmentRepository.save(existing);
+
+        // Update the most recent PENDING maintenance log for this equipment
+        maintenanceLogRepository.findRecentByEquipmentAndStatus(equipmentId, MaintenanceLog.LogStatus.PENDING).stream().findFirst()
+            .ifPresent(log -> {
+                log.setStatus(MaintenanceLog.LogStatus.COMPLETED);
+                log.setActionTaken(action);
+                log.setNotes(notes);
+                log.setRepairCost(cost != null ? cost : 0.0);
+                log.setResolveDate(java.time.LocalDateTime.now());
+                log.setTechnician(admin);
+                maintenanceLogRepository.save(log);
+
+                // Notify reporting trainer
+                if (log.getReportedBy() != null) {
+                    Notification notification = new Notification();
+                    notification.setUser(log.getReportedBy());
+                    notification.setTitle("Equipment Fixed: " + existing.getName());
+                    notification.setMessage("The issue you reported ('" + log.getIssueType() + "') has been resolved: " + action);
+                    notification.setCreatedAt(java.time.LocalDateTime.now());
+                    notification.setRead(false);
+                    notificationRepository.save(notification);
+                }
+            });
+    }
+
+    public List<MaintenanceLog> getMaintenanceHistory(Long equipmentId) {
+        return maintenanceLogRepository.findByEquipmentIdOrderByLogDateDesc(equipmentId);
+    }
+
+    // AI-Based Optimization Recommendation (Mock)
+    public List<String> getAIOptimizationInsights() {
+        return List.of(
+                "Treadmill #04 usage is 40% higher than average. Recommend rotation to Zone B to equalize motor wear.",
+                "Smith Machine #01 showing vibration patterns consistent with bearing fatigue. Schedule preventive check-up.",
+                "Bench Press area optimization: 85% occupancy during peak hours. Recommend adding 2 more adjustable benches.",
+                "Kettlebell set incomplete. Detected missing 16kg unit for 48 hours.");
     }
 
     // Inventory Management
@@ -130,26 +180,6 @@ public class AdminService {
 
     public List<Supplement> getLowStockSupplements() {
         return supplementRepository.findByStockLessThan(10);
-    }
-
-    @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public List<SupplementOrderDTO> getAllSupplementOrders() {
-        try {
-            return supplementOrderRepository.findAllWithDetails().stream()
-                    .map(order -> new SupplementOrderDTO(
-                            order.getId(),
-                            order.getUser() != null ? order.getUser().getUsername() : "N/A",
-                            order.getUser() != null ? order.getUser().getEmail() : "N/A",
-                            order.getSupplement() != null ? order.getSupplement().getName() : "Unknown",
-                            order.getSupplement() != null ? order.getSupplement().getCategory() : "N/A",
-                            order.getQuantity(),
-                            order.getTotalPrice(),
-                            order.getOrderDate()))
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            // Log and return empty to avoid 500
-            return List.of();
-        }
     }
 
     // Feedback Management

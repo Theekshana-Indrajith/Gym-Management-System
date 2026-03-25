@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const MemberHeader = ({ title }) => {
+const MemberHeader = ({ title, subtitle = "Have a productive workout today!", lightTheme = false }) => {
     const [notifications, setNotifications] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
     const [profile, setProfile] = useState(null);
@@ -61,10 +61,10 @@ const MemberHeader = ({ title }) => {
     };
 
     return (
-        <header className="flex justify-between items-center mb-10 relative z-40">
+        <header className="flex justify-between items-center mb-6 relative z-40">
             <div>
-                <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none mb-2">{title}</h1>
-                <p className="text-slate-500 font-medium">Have a productive workout today!</p>
+                {title && <h1 className={`text-3xl font-bold tracking-tight mb-1 ${lightTheme ? 'text-white' : 'text-slate-900'}`}>{title}</h1>}
+                {subtitle && <p className={`text-sm ${lightTheme ? 'text-slate-300' : 'text-slate-500'}`}>{subtitle}</p>}
             </div>
 
             <div className="flex items-center gap-4">
@@ -72,7 +72,7 @@ const MemberHeader = ({ title }) => {
                 <div className="relative" ref={dropdownRef}>
                     <button
                         onClick={() => setShowNotifications(!showNotifications)}
-                        className={`p-4 rounded-2xl transition-all relative ${showNotifications ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' : 'bg-white text-slate-600 shadow-sm border border-slate-100 hover:border-blue-200'
+                        className={`p-3 rounded-xl transition-all relative ${showNotifications ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' : 'bg-white text-slate-600 shadow-sm border border-slate-100 hover:border-blue-200'
                             }`}
                     >
                         <Bell size={24} />
@@ -144,13 +144,13 @@ const MemberHeader = ({ title }) => {
                 </div>
 
                 {/* User Profile Summary */}
-                <div className="flex items-center gap-3 bg-white p-2 pr-6 rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 transition-all cursor-pointer group">
-                    <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black overflow-hidden ring-4 ring-slate-50">
-                        {profile?.username?.[0]?.toUpperCase() || <User size={20} />}
+                <div className="flex items-center gap-3 bg-white p-1 pr-4 rounded-xl border border-slate-100 shadow-sm hover:border-blue-200 transition-all cursor-pointer group">
+                    <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white font-bold overflow-hidden">
+                        {profile?.username?.[0]?.toUpperCase() || <User size={18} />}
                     </div>
                     <div className="hidden md:block">
-                        <p className="text-sm font-black text-slate-900 leading-none mb-1 group-hover:text-blue-600 transition-colors">{profile?.username || 'Loading...'}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Member Plan</p>
+                        <p className="text-sm font-bold text-slate-900 leading-none mb-1 group-hover:text-blue-600 transition-colors">{profile?.username || 'Loading...'}</p>
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest leading-none">Member Plan</p>
                     </div>
                 </div>
             </div>

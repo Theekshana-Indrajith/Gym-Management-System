@@ -9,7 +9,4 @@ public class DashboardStats {
     private long totalAdmins;
     private long totalTrainers;
     private long totalMembers;
-    private double totalRevenue;
-    private long lowStockAlerts;
-    private long todayCheckins;
 }

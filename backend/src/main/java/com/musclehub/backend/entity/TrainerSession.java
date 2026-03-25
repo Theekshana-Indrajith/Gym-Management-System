@@ -2,7 +2,6 @@ package com.musclehub.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.ToString;
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,17 +14,14 @@ public class TrainerSession {
 
     @ManyToOne
     @JoinColumn(name = "trainer_id")
-    @ToString.Exclude
     private User trainer;
 
     @ManyToOne
     @JoinColumn(name = "member_id")
-    @ToString.Exclude
     private User member;
 
     @ManyToOne(optional = true)
     @JoinColumn(name = "slot_id")
-    @ToString.Exclude
     private TrainerSlot slot;
 
     private String sessionType;

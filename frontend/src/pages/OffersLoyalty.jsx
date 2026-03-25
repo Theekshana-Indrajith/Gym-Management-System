@@ -1,14 +1,16 @@
 import React from 'react';
 import MemberSidebar from '../components/MemberSidebar';
-import MemberPageBanner from '../components/MemberPageBanner';
 import { Gift, Zap, Crown, ArrowRight, Tag } from 'lucide-react';
 
 const OffersLoyalty = () => {
     return (
-        <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-indigo-100 to-slate-100">
+        <div className="flex min-h-screen bg-slate-50">
             <MemberSidebar activePage="offers" />
-            <main className="ml-64 flex-1 p-6">
-                <MemberPageBanner title="Offers & Loyalty" subtitle="Exclusive rewards for your fitness milestones" icon={Gift} />
+            <main className="ml-64 flex-1 p-10">
+                <header className="mb-10">
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">Offers & Loyalty</h1>
+                    <p className="text-slate-500 font-medium">Unlock exclusive rewards as you reach your fitness milestones.</p>
+                </header>
 
                 <div className="grid lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-1 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-[2.5rem] p-10 text-white shadow-xl relative overflow-hidden group h-fit">

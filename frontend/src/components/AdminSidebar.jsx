@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Users, Dumbbell, Wrench,
-    Store, MessageSquare, Gift, LogOut, ShieldCheck, Utensils, CreditCard, ShoppingBag
+    Store, MessageSquare, Gift, LogOut, ShieldCheck, Utensils, CreditCard
 } from 'lucide-react';
 
 const AdminSidebar = ({ activePage }) => {
@@ -22,7 +22,7 @@ const AdminSidebar = ({ activePage }) => {
         { id: 'membership', label: 'Membership Plan', icon: CreditCard, path: '/admin/membership' },
         { id: 'workout-plans', label: 'Workout Plans', icon: Dumbbell, path: '/admin/workout-plans' },
         { id: 'meal-plans', label: 'Meal & Nutrition', icon: Utensils, path: '/admin/meal-plans' },
-        { id: 'order-history', label: 'Order History', icon: ShoppingBag, path: '/admin/orders' },
+        { id: 'feedback', label: 'Feedback & Support', icon: MessageSquare, path: '/admin/feedback' },
     ];
 
     return (

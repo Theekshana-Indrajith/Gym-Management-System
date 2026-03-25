@@ -29,4 +29,24 @@ public class AuthController {
         // Simple normalization to ensure case-insensitivity if desired, or just logging
         return ResponseEntity.ok(authService.login(request));
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody java.util.Map<String, String> request) {
+        try {
+            authService.initiatePasswordReset(request.get("email"));
+            return ResponseEntity.ok("Password reset token generated and logged to console.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody java.util.Map<String, String> request) {
+        try {
+            authService.resetPassword(request.get("token"), request.get("newPassword"));
+            return ResponseEntity.ok("Password reset successful.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

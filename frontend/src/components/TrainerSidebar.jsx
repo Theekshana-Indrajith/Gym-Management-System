@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-    LayoutDashboard, Users, CheckSquare, Dumbbell,
+    LayoutDashboard, Users, Dumbbell,
     ClipboardList, MessageSquare, LogOut, Activity, Utensils
 } from 'lucide-react';
 
@@ -17,9 +17,8 @@ const TrainerSidebar = ({ activePage }) => {
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/trainer-dashboard' },
         { id: 'schedule', label: 'My Schedule', icon: ClipboardList, path: '/trainer/schedule' },
         { id: 'members', label: 'My Members', icon: Users, path: '/trainer/members' },
-        { id: 'attendance', label: 'Attendance', icon: CheckSquare, path: '/trainer/attendance' },
-        { id: 'equipment', label: 'Equipment Status', icon: Dumbbell, path: '/trainer/equipment-status' },
-        { id: 'assign', label: 'Assign Workouts', icon: Activity, path: '/trainer/assign-workouts' },
+        { id: 'equipment', label: 'Equipment & Maintenance', icon: Dumbbell, path: '/trainer/equipment-status' },
+
         { id: 'workout-plans', label: 'Workout Plans', icon: Dumbbell, path: '/trainer/workout-plans' },
         { id: 'meal-plans', label: 'Meal Plans', icon: Utensils, path: '/trainer/meal-plans' },
     ];

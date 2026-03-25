@@ -8,6 +8,10 @@ import com.musclehub.backend.repository.UserRepository;
 import com.musclehub.backend.repository.WorkoutAssignmentRepository;
 import com.musclehub.backend.entity.TrainerSession;
 import com.musclehub.backend.repository.TrainerSessionRepository;
+import com.musclehub.backend.entity.Inquiry;
+import com.musclehub.backend.repository.InquiryRepository;
+import com.musclehub.backend.entity.Equipment;
+import com.musclehub.backend.repository.EquipmentRepository;
 import com.musclehub.backend.dto.*;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +29,34 @@ public class MemberService {
     private final WorkoutAssignmentRepository workoutAssignmentRepository;
     private final TrainerSessionRepository trainerSessionRepository;
     private final com.musclehub.backend.repository.TrainerSlotRepository trainerSlotRepository;
+    private final InquiryRepository inquiryRepository;
+    private final EquipmentRepository equipmentRepository;
+
+    public void submitInquiry(String username, String subject, String message) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Inquiry inquiry = new Inquiry();
+        inquiry.setUser(user);
+        inquiry.setSubject(subject);
+        inquiry.setMessage(message);
+        inquiry.setStatus(Inquiry.Status.OPEN);
+        inquiry.setCreatedAt(java.time.LocalDateTime.now());
+        
+        // Let inquiries be unassigned or auto-assign if they have a trainer
+        if (user.getTrainer() != null && !subject.equals("Supplement Request")) {
+            // "Supplement Request" might ideally go to Admin (unassigned), 
+            // but for simplicity we'll just not assign to trainer if it's supplement related
+            inquiry.setAssignedTo(user.getTrainer());
+        }
+        
+        inquiryRepository.save(inquiry);
+    }
+
+    public List<Inquiry> getMyInquiries(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return inquiryRepository.findByUser(user);
+    }
 
     public MemberProfileDTO getProfileDTO(String username) {
         User user = userRepository.findByUsername(username)
@@ -33,10 +65,19 @@ public class MemberService {
         MemberProfileDTO dto = new MemberProfileDTO();
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
         dto.setAge(user.getAge());
         dto.setHeight(user.getHeight());
         dto.setWeight(user.getWeight());
         dto.setGender(user.getGender());
+        dto.setPhoneNumber(user.getPhoneNumber());
+        dto.setFitnessGoal(user.getFitnessGoal());
+        dto.setAllergies(user.getAllergies());
+        dto.setChest(user.getChest());
+        dto.setWaist(user.getWaist());
+        dto.setBiceps(user.getBiceps());
+        dto.setThighs(user.getThighs());
         dto.setHealthDetails(user.getHealthDetails());
         dto.setLoyaltyPoints(user.getLoyaltyPoints());
         if (user.getTrainer() != null) {
@@ -53,6 +94,9 @@ public class MemberService {
             dto.setActivePackagePrice(user.getActivePackage().getPrice());
             dto.setActivePackageDuration(user.getActivePackage().getDurationMonths());
         }
+        dto.setWalletBalance(user.getWalletBalance() != null ? user.getWalletBalance() : 0.0);
+        dto.setDietaryPreference(user.getDietaryPreference() != null ? user.getDietaryPreference().name() : "NON_VEG");
+        dto.setExcludedMeatTypes(user.getExcludedMeatTypes());
         return dto;
     }
 
@@ -83,10 +127,22 @@ public class MemberService {
             user.setEmail(profileData.getEmail());
         }
 
+        user.setFirstName(profileData.getFirstName());
+        user.setLastName(profileData.getLastName());
         user.setAge(profileData.getAge());
         user.setHeight(profileData.getHeight());
         user.setWeight(profileData.getWeight());
+        user.setGender(profileData.getGender());
+        user.setPhoneNumber(profileData.getPhoneNumber());
+        user.setFitnessGoal(profileData.getFitnessGoal());
+        user.setAllergies(profileData.getAllergies());
+        user.setChest(profileData.getChest());
+        user.setWaist(profileData.getWaist());
+        user.setBiceps(profileData.getBiceps());
+        user.setThighs(profileData.getThighs());
         user.setHealthDetails(profileData.getHealthDetails());
+        user.setDietaryPreference(profileData.getDietaryPreference());
+        user.setExcludedMeatTypes(profileData.getExcludedMeatTypes());
 
         userRepository.save(user);
 
@@ -95,6 +151,10 @@ public class MemberService {
         log.setUser(user);
         log.setWeight(user.getWeight());
         log.setBmi(calculateBMI(user.getWeight(), user.getHeight()));
+        log.setChest(user.getChest());
+        log.setWaist(user.getWaist());
+        log.setBiceps(user.getBiceps());
+        log.setThighs(user.getThighs());
         log.setLogDate(java.time.LocalDateTime.now());
         progressLogRepository.save(log);
 
@@ -199,31 +259,41 @@ public class MemberService {
         trainerSlotRepository.save(slot);
     }
 
+    @Transactional
     public void cancelBooking(String memberUsername, Long sessionId) {
+        if (sessionId == null) return;
         TrainerSession session = trainerSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new RuntimeException("Session not found"));
 
         if (!session.getMember().getUsername().equals(memberUsername)) {
-            throw new RuntimeException("Unauthorized: This appointment does not belong to you");
+            throw new RuntimeException("Unauthorized: You cannot cancel another member's booking.");
         }
 
-        // Check 1-hour constraint
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        if (session.getSessionTime().isBefore(now.plusHours(1))) {
-            throw new RuntimeException("Cannot cancel an appointment less than 1 hour before it starts");
+        java.time.LocalDateTime sessionTime = session.getSessionTime();
+
+        // 10 hour rule
+        if (now.plusHours(10).isAfter(sessionTime)) {
+            throw new RuntimeException("Cancellations must be made at least 10 hours before the session start time.");
         }
 
         // Update Slot
-        com.musclehub.backend.entity.TrainerSlot slot = session.getSlot();
-        if (slot != null) {
-            slot.setBookedCount(Math.max(0, slot.getBookedCount() - 1));
-            if (slot.getBookedCount() < slot.getCapacity()) {
-                slot.setStatus("AVAILABLE");
+        if (session.getSlot() != null) {
+            com.musclehub.backend.entity.TrainerSlot slot = session.getSlot();
+            if (slot != null && slot.getBookedCount() != null) {
+                slot.setBookedCount(Math.max(0, slot.getBookedCount() - 1));
             }
-            trainerSlotRepository.save(slot);
+            if (slot != null) {
+                slot.setStatus("AVAILABLE");
+                trainerSlotRepository.save(slot);
+            }
         }
 
-        // Delete Session
         trainerSessionRepository.delete(session);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Equipment> getAllEquipmentStatus() {
+        return equipmentRepository.findAll();
     }
 }

@@ -25,23 +25,20 @@ public class MealPlan {
     private String planName;
 
     @Column(columnDefinition = "TEXT")
-    private String breakfast;
-
-    @Column(columnDefinition = "TEXT")
-    private String lunch;
-
-    @Column(columnDefinition = "TEXT")
-    private String dinner;
-
-    @Column(columnDefinition = "TEXT")
-    private String snacks;
+    private String meals; // Breakfast, Lunch, Dinner, Snacks
 
     private Double dailyCalories;
     private String dietType; // Keto, Vegan, High Protein
+    private String goal;
 
-    @Column(columnDefinition = "TEXT")
-    private String recommendedSupplements;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplement_id")
+    private Supplement recommendedSupplement;
+
+    private String supplementDosage;
 
     private Boolean isAiGenerated = false;
+    private Boolean isActive = true;
+
     private LocalDate createdDate = LocalDate.now();
 }

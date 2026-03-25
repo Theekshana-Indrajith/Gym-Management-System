@@ -1,14 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import MemberSidebar from '../components/MemberSidebar';
-import MemberPageBanner from '../components/MemberPageBanner';
-import { HelpCircle, MessageSquare, Phone, Mail, Send, ChevronRight } from 'lucide-react';
+import { HelpCircle, MessageSquare, Phone, Mail, Send, ChevronRight, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 const HelpSupport = () => {
+    const [subject, setSubject] = useState('Feedback');
+    const [message, setMessage] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!message.trim()) return;
+        setLoading(true);
+        try {
+            const auth = JSON.parse(localStorage.getItem('auth'));
+            await axios.post('http://localhost:8080/api/member/inquiries', {
+                subject,
+                message
+            }, { headers: { Authorization: auth } });
+            alert("Your inquiry has been submitted! Our team will get back to you soon.");
+            setMessage('');
+        } catch (err) {
+            alert("Failed to send inquiry. Please try again later.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
-        <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-indigo-100 to-slate-100">
+        <div className="flex min-h-screen bg-slate-50 font-sans">
             <MemberSidebar activePage="support" />
-            <main className="ml-64 flex-1 p-6">
-                <MemberPageBanner title="Help & Support" subtitle="We're here to assist you 24/7" icon={HelpCircle} />
+            <main className="ml-64 flex-1 p-10">
+                <header className="mb-10">
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">Help & Support</h1>
+                    <p className="text-slate-500 font-medium">We're here to assist you 24/7. Get in touch with our team.</p>
+                </header>
 
                 <div className="grid lg:grid-cols-2 gap-12">
                     <div className="space-y-8">
@@ -16,22 +42,36 @@ const HelpSupport = () => {
                             <h3 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-2">
                                 <MessageSquare className="text-blue-500" /> Send an Inquiry
                             </h3>
-                            <form className="space-y-6">
+                            <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-2">
                                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none">Subject</label>
-                                    <select className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 font-bold outline-none focus:ring-2 focus:ring-blue-500/20">
+                                    <select 
+                                        value={subject}
+                                        onChange={(e) => setSubject(e.target.value)}
+                                        className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 font-bold outline-none focus:ring-2 focus:ring-blue-500/20"
+                                    >
                                         <option>Trainer Issue</option>
                                         <option>Subscription & Billing</option>
                                         <option>Technical Problem</option>
                                         <option>Feedback</option>
+                                        <option>Supplement Request</option>
                                     </select>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none">Your Message</label>
-                                    <textarea className="w-full p-6 rounded-[2rem] bg-slate-50 border border-slate-100 font-medium outline-none h-40 focus:ring-2 focus:ring-blue-500/20" placeholder="Describe your issue in detail..."></textarea>
+                                    <textarea 
+                                        value={message}
+                                        onChange={(e) => setMessage(e.target.value)}
+                                        className="w-full p-6 rounded-[2rem] bg-slate-50 border border-slate-100 font-medium outline-none h-40 focus:ring-2 focus:ring-blue-500/20" 
+                                        placeholder="Describe your issue in detail..."
+                                    ></textarea>
                                 </div>
-                                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20">
-                                    <Send size={20} /> Submit Inquiry
+                                <button 
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+                                >
+                                    {loading ? <Loader2 className="animate-spin" size={20} /> : <><Send size={20} /> Submit Inquiry</>}
                                 </button>
                             </form>
                         </section>

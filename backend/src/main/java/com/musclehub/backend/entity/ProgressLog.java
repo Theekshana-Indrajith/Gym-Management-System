@@ -18,6 +18,10 @@ public class ProgressLog {
 
     private Double weight;
     private Double bmi;
+    private Double chest;
+    private Double waist;
+    private Double biceps;
+    private Double thighs;
     private LocalDateTime logDate;
 
     @PrePersist
