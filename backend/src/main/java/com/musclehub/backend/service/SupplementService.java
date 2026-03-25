@@ -1,13 +1,8 @@
 package com.musclehub.backend.service;
 
 import com.musclehub.backend.entity.Supplement;
-import com.musclehub.backend.entity.SupplementOrder;
-import com.musclehub.backend.entity.User;
-import com.musclehub.backend.repository.SupplementOrderRepository;
 import com.musclehub.backend.repository.SupplementRepository;
-import com.musclehub.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +13,6 @@ import java.util.List;
 public class SupplementService {
 
     private final SupplementRepository supplementRepository;
-    private final SupplementOrderRepository supplementOrderRepository;
-    private final UserRepository userRepository;
     private final NotificationService notificationService;
 
     public List<Supplement> getAllSupplements() {
@@ -77,26 +70,14 @@ public class SupplementService {
     }
 
     @Transactional
-    public Supplement buySupplement(Long id, Integer quantity, String username) {
+    public Supplement buySupplement(Long id, Integer quantity) {
         Supplement supplement = getSupplementById(id);
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (supplement.getStock() < quantity) {
             throw new RuntimeException("Insufficient stock");
         }
 
         supplement.setStock(supplement.getStock() - quantity);
-        Supplement savedSupplement = supplementRepository.save(supplement);
-
-        SupplementOrder order = new SupplementOrder();
-        order.setSupplement(savedSupplement);
-        order.setUser(user);
-        order.setQuantity(quantity);
-        order.setTotalPrice(supplement.getPrice() * quantity);
-        order.setOrderDate(java.time.LocalDateTime.now()); // Explicitly set
-        supplementOrderRepository.save(order);
-
-        return savedSupplement;
+        return supplementRepository.save(supplement);
     }
 }

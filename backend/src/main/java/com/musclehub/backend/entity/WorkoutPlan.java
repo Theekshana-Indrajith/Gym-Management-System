@@ -32,4 +32,13 @@ public class WorkoutPlan {
 
     private Boolean isAiGenerated = false;
     private LocalDate createdDate = LocalDate.now();
+
+    @Enumerated(EnumType.STRING)
+    private PlanStatus status = PlanStatus.CURRENT;
+
+    private String planType = "MANUAL"; // MANUAL, AI_GENERATED
+
+    public enum PlanStatus {
+        CURRENT, ARCHIVED
+    }
 }

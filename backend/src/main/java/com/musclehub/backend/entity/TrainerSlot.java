@@ -2,7 +2,6 @@ package com.musclehub.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.ToString;
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,7 +14,6 @@ public class TrainerSlot {
 
     @ManyToOne
     @JoinColumn(name = "trainer_id")
-    @ToString.Exclude
     private User trainer;
 
     private LocalDateTime startTime;
@@ -24,4 +22,7 @@ public class TrainerSlot {
     private Integer bookedCount = 0;
 
     private String status; // "AVAILABLE", "FULL"
+
+    @OneToMany(mappedBy = "slot")
+    private java.util.List<TrainerSession> sessions = new java.util.ArrayList<>();
 }

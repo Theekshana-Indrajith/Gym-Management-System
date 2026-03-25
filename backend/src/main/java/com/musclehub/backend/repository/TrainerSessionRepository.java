@@ -9,4 +9,6 @@ public interface TrainerSessionRepository extends JpaRepository<TrainerSession, 
     List<TrainerSession> findAllByTrainer(User trainer);
 
     List<TrainerSession> findAllByMember(User member);
+
+    List<TrainerSession> findBySlotId(Long slotId);
 }
