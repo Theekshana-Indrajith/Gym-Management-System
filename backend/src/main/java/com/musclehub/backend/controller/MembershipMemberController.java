@@ -52,4 +52,10 @@ public class MembershipMemberController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @PostMapping("/cancel")
+    public ResponseEntity<?> cancelMembership(Authentication authentication) {
+        membershipService.cancelMembership(authentication.getName());
+        return ResponseEntity.ok("Membership cancelled successfully");
+    }
 }

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.ToString;
 
 @Data
 @Entity
@@ -17,6 +16,9 @@ public class User {
 
     @Column(unique = true, nullable = false)
     private String username;
+
+    private String firstName;
+    private String lastName;
 
     @Column(unique = true, nullable = false)
     private String email;
@@ -35,17 +37,38 @@ public class User {
 
     private String gender;
 
+    private String phoneNumber;
+    private String fitnessGoal;
+    private String allergies;
+    private Double chest;
+    private Double waist;
+    private Double biceps;
+    private Double thighs;
+
     @Column(columnDefinition = "TEXT")
     private String healthDetails;
+
+    @Column(columnDefinition = "TEXT")
+    private String qualification;
 
     private Integer loyaltyPoints = 0;
 
     private Boolean isActive = true;
+    
+    private Double walletBalance = 0.0;
+
+    private String resetToken;
+    private java.time.LocalDateTime tokenExpiry;
+    
+    @Enumerated(EnumType.STRING)
+    private DietaryPreference dietaryPreference = DietaryPreference.NON_VEG;
+
+    @Column(columnDefinition = "TEXT")
+    private String excludedMeatTypes; // Comma separated: BEEF, PORK, etc.
 
     private java.time.LocalDate joinedDate = java.time.LocalDate.now();
 
     @JsonIgnore
-    @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trainer_id")
     private User trainer;
@@ -63,5 +86,9 @@ public class User {
 
     public enum MembershipStatus {
         NONE, PENDING, ACTIVE, EXPIRED
+    }
+
+    public enum DietaryPreference {
+        VEGETARIAN, VEGAN, NON_VEG
     }
 }
