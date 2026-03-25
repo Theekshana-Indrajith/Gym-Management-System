@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+dist/
+build/
+*.class
+*.log
+
+# backend
+backend/target/
+.mvn/
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
