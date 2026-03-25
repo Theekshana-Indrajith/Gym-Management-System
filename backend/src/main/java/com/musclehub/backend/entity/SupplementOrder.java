@@ -2,14 +2,17 @@ package com.musclehub.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import java.time.LocalDateTime;
+import java.util.List;
 
-@Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity
 @Table(name = "supplement_orders")
 public class SupplementOrder {
     @Id
@@ -20,11 +23,50 @@ public class SupplementOrder {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "supplement_id", nullable = false)
-    private Supplement supplement;
-
-    private Integer quantity;
-    private Double totalPrice;
     private LocalDateTime orderDate = LocalDateTime.now();
+    private Double totalPrice;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private DeliveryMethod deliveryMethod;
+
+    private String deliveryAddress;
+    private String contactNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private OrderStatus status = OrderStatus.PENDING;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private PaymentMethod paymentMethod;
+    
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String paymentSlip; // Base64 or URL to the uploaded slip image
+    
+    // To handle legacy DB column or accidental addition
+    @Column(name = "supplement_id", nullable = true)
+    private Long supplementId;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    private List<SupplementOrderItem> items = new java.util.ArrayList<>();
+
+    public enum DeliveryMethod {
+        COURIER, PICKUP
+    }
+
+    public enum PaymentMethod {
+        ONLINE_PAYMENT, CASH_ON_PICKUP, WALLET
+    }
+
+    public enum OrderStatus {
+        PENDING, 
+        AWAITING_PAYMENT_APPROVAL,
+        PAYMENT_VERIFIED,
+        PREPARED,
+        SHIPPED,
+        COMPLETED,
+        CANCELLED
+    }
 }

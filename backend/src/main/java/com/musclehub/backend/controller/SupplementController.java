@@ -43,8 +43,7 @@ public class SupplementController {
 
     @PostMapping("/{id}/buy")
     public ResponseEntity<Supplement> buySupplement(@PathVariable Long id,
-            @RequestParam(defaultValue = "1") Integer quantity,
-            java.security.Principal principal) {
-        return ResponseEntity.ok(supplementService.buySupplement(id, quantity, principal.getName()));
+            @RequestParam(defaultValue = "1") Integer quantity) {
+        return ResponseEntity.ok(supplementService.buySupplement(id, quantity));
     }
 }

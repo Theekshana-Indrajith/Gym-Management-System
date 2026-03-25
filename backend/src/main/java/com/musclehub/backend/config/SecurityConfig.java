@@ -28,8 +28,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/supplements/**").authenticated()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/membership/packages")
-                        .permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/supplements/*/buy")
                         .authenticated()
                         .requestMatchers("/api/supplements/**").hasRole("ADMIN")
@@ -37,7 +35,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/member/trainers").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/member/**").hasRole("MEMBER")
-                        .requestMatchers("/api/trainer/**").hasRole("TRAINER")
+                        .requestMatchers("/api/trainer/**").hasAnyRole("TRAINER", "ADMIN")
                         .anyRequest().authenticated())
                 .httpBasic(org.springframework.security.config.Customizer.withDefaults());
 
@@ -59,9 +57,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(
-                Arrays.asList("http://localhost:5173", "http://localhost:5174", "http://localhost:5175",
-                        "http://localhost:5176", "http://localhost:5177")); // Frontend URLs
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                Arrays.asList("http://localhost:5173", "http://localhost:5174", "http://localhost:5175")); // Frontend
+                                                                                                           // URLs
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
 

@@ -32,7 +32,9 @@ const Login = () => {
                 if (user.role === 'ADMIN') {
                     navigate('/admin-dashboard');
                 } else if (user.role === 'TRAINER') {
-                    navigate('/trainer-dashboard'); // Placeholder
+                    navigate('/trainer-dashboard');
+                } else if (user.role === 'TECHNICIAN') {
+                    navigate('/technician-dashboard');
                 } else {
                     navigate('/member-dashboard');
                 }
@@ -106,7 +108,7 @@ const Login = () => {
                             <input type="checkbox" className="mr-2 rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-offset-0 focus:ring-0" />
                             Remember me
                         </label>
-                        <a href="#" className="text-blue-400 hover:text-blue-300 transition-colors">Forgot Password?</a>
+                        <Link to="/forgot-password" size="sm" className="text-blue-400 hover:text-blue-300 transition-colors">Forgot Password?</Link>
                     </div>
 
                     <button
