@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import TrainerSidebar from '../components/TrainerSidebar';
-import { User, CheckCircle, XCircle, Clock, Calendar, ClipboardCheck } from 'lucide-react';
+import TrainerHeader from '../components/TrainerHeader';
+import { User, CheckCircle, XCircle, Clock, Calendar, Box, Facebook, Twitter, Instagram } from 'lucide-react';
 import axios from 'axios';
-import TrainerPageBanner from '../components/TrainerPageBanner';
 
 const AttendanceMarking = () => {
     const [members, setMembers] = useState([]);
@@ -46,17 +46,33 @@ const AttendanceMarking = () => {
     };
 
     return (
-        <div className="flex min-h-screen bg-gradient-to-br from-emerald-50 via-teal-100 to-slate-100">
+        <div className="flex min-h-screen bg-blue-100 font-sans">
             <TrainerSidebar activePage="attendance" />
-            <main className="ml-64 flex-1 p-6 flex flex-col">
-                <TrainerPageBanner title="Attendance Portal" subtitle="Daily gym check-ins for your assigned members." icon={ClipboardCheck} />
+            <main className="ml-64 flex-1 flex flex-col min-h-screen">
+                <div className="relative bg-slate-900 px-8 pt-8 pb-14 shadow-sm">
+                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=2000')] bg-cover bg-center opacity-40"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent"></div>
 
-                <div className="mb-8 flex justify-end">
-                    <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 flex items-center gap-3 shadow-sm">
-                        <Calendar size={20} className="text-emerald-500" />
-                        <span className="font-black text-slate-700">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+                    <div className="relative z-50 max-w-[1400px] mx-auto w-full">
+                        <TrainerHeader title="" subtitle="Daily gym check-ins for your assigned members." lightTheme={true} />
+
+                        <div className="mt-8 mb-4 flex justify-between items-end">
+                            <div>
+                                <div className="flex items-center gap-2 mb-2 text-emerald-400">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] px-2 py-0.5 border border-emerald-400/30 rounded">MUSCLEHUB</span>
+                                </div>
+                                <h2 className="text-4xl font-black text-white mb-2 tracking-tight">Attendance Portal</h2>
+                                <p className="text-slate-300 font-medium">Daily gym check-ins for your assigned members.</p>
+                            </div>
+                            <div className="bg-white/10 px-6 py-3 rounded-2xl border border-white/20 flex items-center gap-3 shadow-sm backdrop-blur-sm">
+                                <Calendar size={20} className="text-emerald-400" />
+                                <span className="font-black text-white">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <div className="flex-1 px-8 pb-12 max-w-[1400px] mx-auto w-full -mt-6 relative z-20">
 
                 <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
                     <div className="overflow-x-auto">
@@ -109,6 +125,59 @@ const AttendanceMarking = () => {
                         )}
                     </div>
                 </div>
+                </div>
+
+                <footer className="bg-slate-950 text-slate-400 py-12 px-10 mt-auto w-full flex flex-col items-center relative z-20">
+                    <div className="max-w-7xl w-full mx-auto flex flex-col md:flex-row justify-between gap-10 border-b border-slate-800 pb-8">
+                        <div className="flex flex-col gap-4 max-w-[200px]">
+                            <div className="flex items-center gap-2 text-white font-bold text-xl tracking-tight">
+                                <Box size={24} className="text-white bg-blue-600 p-1 rounded min-w-[32px] min-h-[32px]" /> MUSCLEHUB
+                            </div>
+                            <p className="text-[11px] leading-relaxed text-slate-500">Premium Fitness Management</p>
+                        </div>
+                        <div className="flex flex-1 justify-around gap-4 text-[11px]">
+                            <div>
+                                <h4 className="text-white font-bold mb-4 text-[13px] font-display">About Us</h4>
+                                <ul className="space-y-2 opacity-80 leading-relaxed max-w-[120px] text-slate-400">
+                                    <li>Our gym's vision, story & core mission.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold mb-4 text-[13px] font-display">Services</h4>
+                                <ul className="space-y-2 opacity-80 leading-relaxed max-w-[120px] text-slate-400">
+                                    <li>AI plans, top-tier trainers & facilities.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold mb-4 text-[13px] font-display">Contact</h4>
+                                <ul className="space-y-2 opacity-80 leading-relaxed max-w-[120px] text-slate-400">
+                                    <li>24/7 dedicated support & inquiry line.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold mb-4 text-[13px] font-display">Privacy Policy</h4>
+                                <ul className="space-y-2 opacity-80 leading-relaxed max-w-[120px] text-slate-400">
+                                    <li>Data security, user safety & terms.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors text-slate-400">
+                                <Facebook size={14} />
+                            </button>
+                            <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-blue-400 hover:text-white transition-colors text-slate-400">
+                                <Twitter size={14} />
+                            </button>
+                            <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-pink-600 hover:text-white transition-colors text-slate-400">
+                                <Instagram size={14} />
+                            </button>
+                        </div>
+                    </div>
+                    <div className="max-w-7xl w-full mx-auto flex justify-between items-center text-[10px] mt-8 text-slate-600 font-semibold tracking-wide">
+                        <p>&copy; 2026 MuscleHub. All rights reserved.</p>
+                        <p>Colombo, Sri Lanka <span className="mx-2">|</span> 011-2224455</p>
+                    </div>
+                </footer>
             </main>
         </div>
     );

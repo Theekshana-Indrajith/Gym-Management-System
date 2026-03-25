@@ -4,19 +4,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const TrainerHeader = ({ title }) => {
+const TrainerHeader = ({ title, subtitle = "Guide your members to success!", lightTheme = false }) => {
     const [notifications, setNotifications] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
-    const [user, setUser] = useState(null);
+    const [profile, setProfile] = useState(null);
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const localUser = JSON.parse(localStorage.getItem('user'));
-        if (localUser) {
-            setUser(localUser);
-        }
+        const user = JSON.parse(localStorage.getItem('user'));
+        setProfile(user);
         fetchData();
+        
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setShowNotifications(false);
@@ -61,10 +60,10 @@ const TrainerHeader = ({ title }) => {
     };
 
     return (
-        <header className="flex justify-between items-center mb-10 relative z-40">
+        <header className="flex justify-between items-center mb-6 relative z-40">
             <div>
-                <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none mb-2">{title}</h1>
-                <p className="text-slate-500 font-medium">Guide your members to success!</p>
+                {title && <h1 className={`text-3xl font-bold tracking-tight mb-1 ${lightTheme ? 'text-white' : 'text-slate-900'}`}>{title}</h1>}
+                {subtitle && <p className={`text-sm ${lightTheme ? 'text-slate-300' : 'text-slate-500'}`}>{subtitle}</p>}
             </div>
 
             <div className="flex items-center gap-4">
@@ -72,8 +71,7 @@ const TrainerHeader = ({ title }) => {
                 <div className="relative" ref={dropdownRef}>
                     <button
                         onClick={() => setShowNotifications(!showNotifications)}
-                        className={`p-4 rounded-2xl transition-all relative ${showNotifications ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20' : 'bg-white text-slate-600 shadow-sm border border-slate-100 hover:border-emerald-200'
-                            }`}
+                        className={`p-3 rounded-xl transition-all relative ${showNotifications ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' : 'bg-white text-slate-600 shadow-sm border border-slate-100 hover:border-blue-200'}`}
                     >
                         <Bell size={24} />
                         {unreadCount > 0 && (
@@ -93,7 +91,7 @@ const TrainerHeader = ({ title }) => {
                             >
                                 <div className="p-6 border-b border-slate-50 flex items-center justify-between">
                                     <h3 className="font-black text-slate-900">Notifications</h3>
-                                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                                         {unreadCount} New
                                     </span>
                                 </div>
@@ -107,17 +105,15 @@ const TrainerHeader = ({ title }) => {
                                             <div
                                                 key={i}
                                                 onClick={() => !n.read && handleReadOne(n.id)}
-                                                className={`flex gap-4 p-4 rounded-2xl transition-colors border border-transparent cursor-pointer group ${n.read ? 'bg-slate-50 opacity-60' : 'bg-emerald-50/50 hover:border-emerald-100'
-                                                    }`}
+                                                className={`flex gap-4 p-4 rounded-2xl transition-colors border border-transparent cursor-pointer group ${n.read ? 'bg-slate-50 opacity-60' : 'bg-blue-50/50 hover:border-blue-100'}`}
                                             >
-                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${n.read ? 'bg-slate-200' : 'bg-emerald-100 group-hover:bg-emerald-500'
-                                                    }`}>
-                                                    <Zap size={18} className={n.read ? 'text-slate-400' : 'text-emerald-600 group-hover:text-white'} />
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${n.read ? 'bg-slate-200' : 'bg-blue-100 group-hover:bg-blue-500'}`}>
+                                                    <Zap size={18} className={n.read ? 'text-slate-400' : 'text-blue-600 group-hover:text-white'} />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-start">
                                                         <p className={`font-bold text-sm leading-tight mb-1 ${n.read ? 'text-slate-500' : 'text-slate-900'}`}>{n.title}</p>
-                                                        {!n.read && <div className="w-2 h-2 bg-emerald-500 rounded-full shrink-0 mt-1" />}
+                                                        {!n.read && <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0 mt-1" />}
                                                     </div>
                                                     <p className={`text-xs line-clamp-2 leading-relaxed font-medium ${n.read ? 'text-slate-400' : 'text-slate-600'}`}>{n.message}</p>
                                                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2 block">
@@ -144,13 +140,13 @@ const TrainerHeader = ({ title }) => {
                 </div>
 
                 {/* User Profile Summary */}
-                <div className="flex items-center gap-3 bg-white p-2 pr-6 rounded-2xl border border-slate-100 shadow-sm hover:border-emerald-200 transition-all cursor-pointer group">
-                    <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black overflow-hidden ring-4 ring-slate-50">
-                        {user?.username?.[0]?.toUpperCase() || <User size={20} />}
+                <div className="flex items-center gap-3 bg-white p-1 pr-4 rounded-xl border border-slate-100 shadow-sm hover:border-blue-200 transition-all cursor-pointer group">
+                    <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white font-bold overflow-hidden">
+                        {profile?.username?.[0]?.toUpperCase() || <User size={18} />}
                     </div>
                     <div className="hidden md:block">
-                        <p className="text-sm font-black text-slate-900 leading-none mb-1 group-hover:text-emerald-600 transition-colors">{user?.username || 'Trainer'}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Trainer</p>
+                        <p className="text-sm font-bold text-slate-900 leading-none mb-1 group-hover:text-blue-600 transition-colors">{profile?.username || 'Loading...'}</p>
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest leading-none">TRAINER</p>
                     </div>
                 </div>
             </div>
