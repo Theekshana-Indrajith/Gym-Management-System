@@ -1,13 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, User, BrainCircuit, Calendar,
     ShoppingBag, LineChart, Gift, HelpCircle, LogOut, Activity,
     Dumbbell, Utensils, CreditCard
 } from 'lucide-react';
+import axios from 'axios';
 
 const MemberSidebar = ({ activePage }) => {
     const navigate = useNavigate();
+    const [notifications, setNotifications] = useState([]);
+
+    useEffect(() => {
+        fetchNotifications();
+        const interval = setInterval(fetchNotifications, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const fetchNotifications = async () => {
+        try {
+            const auth = JSON.parse(localStorage.getItem('auth'));
+            if (!auth) return;
+            const res = await axios.get('http://localhost:8080/api/notifications/my', { headers: { Authorization: auth } });
+            setNotifications(res.data.filter(n => !n.read)); // Only count unread
+        } catch (err) {
+            console.error("Sidebar notification fetch failed", err);
+        }
+    };
+
+    const getBadgeCount = (menuId) => {
+        let count = 0;
+        notifications.forEach(n => {
+            if (menuId === 'store' && (n.type === 'INQUIRY_REPLY' || n.type === 'ORDER_UPDATE')) count++;
+            if (menuId === 'trainer' && n.type === 'PROGRESS_ADVISORY') count++;
+        });
+        return count;
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('user');
@@ -34,20 +62,30 @@ const MemberSidebar = ({ activePage }) => {
                 <span className="text-xl font-black tracking-tighter">MUSCLE<span className="text-blue-500">HUB</span></span>
             </Link>
 
-            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                {menuItems.map((item) => (
-                    <Link
-                        key={item.id}
-                        to={item.path}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium ${activePage === item.id
-                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                            }`}
-                    >
-                        <item.icon size={20} />
-                        {item.label}
-                    </Link>
-                ))}
+            <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
+                {menuItems.map((item) => {
+                    const count = getBadgeCount(item.id);
+                    return (
+                        <Link
+                            key={item.id}
+                            to={item.path}
+                            className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 font-medium ${activePage === item.id
+                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                                }`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <item.icon size={20} />
+                                {item.label}
+                            </div>
+                            {count > 0 && (
+                                <span className={`flex items-center justify-center w-5 h-5 text-[10px] font-black rounded-full ${activePage === item.id ? 'bg-white text-blue-600' : 'bg-red-500 text-white shadow-lg shadow-red-500/30 animate-pulse'}`}>
+                                    {count > 99 ? '99+' : count}
+                                </span>
+                            )}
+                        </Link>
+                    );
+                })}
             </nav>
 
             <div className="p-4 border-t border-white/5 space-y-4">

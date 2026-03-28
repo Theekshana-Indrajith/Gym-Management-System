@@ -209,15 +209,15 @@ const UserManagementPage = ({ role }) => {
                         <form onSubmit={handleSubmit} className="space-y-5">
                             <div>
                                 <label className="block text-slate-500 text-xs font-bold mb-2 uppercase tracking-wider">Username</label>
-                                <input type="text" name="username" value={formData.username} onChange={handleChange} className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400" placeholder="Enter username" required />
+                                <input type="text" name="username" value={formData.username} onChange={handleChange} className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400" placeholder="Enter username" required autoComplete="off" />
                             </div>
                             <div>
                                 <label className="block text-slate-500 text-xs font-bold mb-2 uppercase tracking-wider">Email Address</label>
-                                <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400" placeholder="email@example.com" required />
+                                <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400" placeholder="email@example.com" required autoComplete="off" />
                             </div>
                             <div>
                                 <label className="block text-slate-500 text-xs font-bold mb-2 uppercase tracking-wider">Password {isEditing && '(Leave blank to keep)'}</label>
-                                <input type="password" name="password" value={formData.password} onChange={handleChange} className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400" placeholder="••••••••" required={!isEditing} />
+                                <input type="password" name="password" value={formData.password} onChange={handleChange} className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400" placeholder="••••••••" required={!isEditing} autoComplete="new-password" />
                             </div>
                             <div className="flex gap-3 pt-2">
                                 <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-2xl transition-all shadow-lg shadow-blue-500/20 active:scale-95">
