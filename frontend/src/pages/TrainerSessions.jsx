@@ -95,7 +95,7 @@ const TrainerSessions = () => {
     };
 
     const handleCancelBooking = async (sessionId) => {
-        if (!window.confirm("Are you sure you want to cancel this booking? Cancellations must be made at least 10 hours before the session.")) return;
+        if (!window.confirm("Are you sure you want to cancel this booking? Cancellations must be made at least 2 hours before the session.")) return;
         try {
             await axios.delete(`http://localhost:8080/api/member/bookings/${sessionId}`, { headers: { Authorization: auth } });
             alert("Booking Cancelled.");
@@ -195,12 +195,47 @@ const TrainerSessions = () => {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Booking Protocols */}
+                                <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white border border-white/5 relative overflow-hidden group shadow-2xl">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-blue-600/20 transition-all"></div>
+                                    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-blue-400 mb-6 flex items-center gap-2">
+                                        <Clock size={14} className="animate-pulse" /> Operational Protocols
+                                    </h4>
+                                    <div className="space-y-6">
+                                        <div className="flex items-start gap-4">
+                                            <div className="w-6 h-6 rounded-xl bg-blue-600/20 flex items-center justify-center flex-shrink-0 mt-1">
+                                                <CheckCircle size={12} className="text-blue-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[12px] font-black uppercase tracking-widest text-white mb-1">Daily Cap</p>
+                                                <p className="text-[11px] font-medium leading-relaxed italic text-slate-400">
+                                                    Restricted to <span className="text-blue-400 font-bold">one session</span> per day to ensure physiological recovery.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-4">
+                                            <div className="w-6 h-6 rounded-xl bg-emerald-600/20 flex items-center justify-center flex-shrink-0 mt-1">
+                                                <CheckCircle size={12} className="text-emerald-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[12px] font-black uppercase tracking-widest text-white mb-1">Cancellation Rule</p>
+                                                <p className="text-[11px] font-medium leading-relaxed italic text-slate-400">
+                                                    Cancellations must be processed <span className="text-emerald-400 font-bold">2 hours</span> before the start time.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p className="mt-8 text-[10px] text-slate-500 font-bold uppercase tracking-tighter text-center border-t border-white/5 pt-6">
+                                        MuscleHub Professional Standards
+                                    </p>
+                                </div>
                             </div>
 
                             <div className="lg:col-span-2 space-y-8">
                                 <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl border border-slate-100 relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full -mr-32 -mt-32 blur-3xl shadow-inner"></div>
-                                    
+
                                     <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 text-slate-900 font-sans">
                                         <div>
                                             <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3 tracking-tighter uppercase italic">
@@ -251,7 +286,7 @@ const TrainerSessions = () => {
                                                     </div>
                                                 );
                                             }
-                                            return filteredSessions.sort((a,b) => new Date(a.sessionTime) - new Date(b.sessionTime)).map((s, i) => (
+                                            return filteredSessions.sort((a, b) => new Date(a.sessionTime) - new Date(b.sessionTime)).map((s, i) => (
                                                 <div key={i} className="flex flex-col md:flex-row md:justify-between md:items-center p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all group active:scale-[0.98] gap-4">
                                                     <div className="flex items-center gap-6">
                                                         <div className="w-14 h-14 bg-slate-900 rounded-2xl flex flex-col items-center justify-center text-white font-black text-[10px] shadow-lg shadow-slate-900/10 group-hover:bg-blue-600 transition-colors">
@@ -266,16 +301,15 @@ const TrainerSessions = () => {
                                                         </div>
                                                     </div>
                                                     <div className="flex justify-between md:flex-col items-center md:items-end gap-3">
-                                                        <span className={`text-[10px] uppercase font-black px-4 py-1.5 rounded-full border shadow-sm ${
-                                                            s.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                                            s.status === 'MISSING' ? 'bg-red-50 text-red-600 border-red-100' :
-                                                            'bg-blue-50 text-blue-600 border-blue-100'
-                                                        }`}>
+                                                        <span className={`text-[10px] uppercase font-black px-4 py-1.5 rounded-full border shadow-sm ${s.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                                s.status === 'MISSING' ? 'bg-red-50 text-red-600 border-red-100' :
+                                                                    'bg-blue-50 text-blue-600 border-blue-100'
+                                                            }`}>
                                                             {s.status}
                                                         </span>
                                                         <div className="flex items-center gap-3">
                                                             {s.status === 'UPCOMING' && (
-                                                                <button 
+                                                                <button
                                                                     onClick={() => handleCancelBooking(s.id)}
                                                                     className="text-[10px] font-black text-red-400 hover:text-red-500 uppercase tracking-widest border-b border-red-100 hover:border-red-500 transition-all"
                                                                 >
@@ -283,7 +317,7 @@ const TrainerSessions = () => {
                                                                 </button>
                                                             )}
                                                             {s.notes && (
-                                                                <button 
+                                                                <button
                                                                     onClick={() => setViewNotes(s)}
                                                                     className="bg-slate-900 text-white p-2 rounded-xl hover:bg-blue-600 transition-all shadow-md active:scale-90"
                                                                 >
@@ -311,14 +345,14 @@ const TrainerSessions = () => {
                                         {sessions.filter(s => s.status !== 'UPCOMING').length === 0 ? (
                                             <p className="text-slate-500 italic text-center py-4">Your history will appear here once you complete sessions.</p>
                                         ) : (
-                                            sessions.filter(s => s.status !== 'UPCOMING').sort((a,b) => new Date(b.sessionTime) - new Date(a.sessionTime)).map((s, i) => (
+                                            sessions.filter(s => s.status !== 'UPCOMING').sort((a, b) => new Date(b.sessionTime) - new Date(a.sessionTime)).map((s, i) => (
                                                 <div key={i} className="flex justify-between items-center p-5 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all group">
                                                     <div>
                                                         <p className="font-bold text-white group-hover:text-blue-400 transition-colors">{s.sessionType}</p>
                                                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{formatDate(s.sessionTime)} • {formatTime(s.sessionTime)}</p>
                                                     </div>
                                                     {s.notes && (
-                                                        <button 
+                                                        <button
                                                             onClick={() => setViewNotes(s)}
                                                             className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg active:scale-95"
                                                         >
@@ -437,8 +471,8 @@ const TrainerSessions = () => {
                                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
                                     className="bg-slate-900 w-full max-w-lg rounded-[2.5rem] p-10 relative shadow-2xl border border-white/10"
                                 >
-                                    <button 
-                                        onClick={() => setViewNotes(null)} 
+                                    <button
+                                        onClick={() => setViewNotes(null)}
                                         className="absolute right-8 top-8 text-slate-500 hover:text-white transition-colors"
                                     >
                                         <X size={24} />
@@ -457,7 +491,7 @@ const TrainerSessions = () => {
                                             "{viewNotes.notes}"
                                         </p>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => setViewNotes(null)}
                                         className="w-full bg-blue-600 hover:bg-blue-500 text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-blue-500/20"
                                     >

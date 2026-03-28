@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TrainerSidebar from '../components/TrainerSidebar';
 import TrainerHeader from '../components/TrainerHeader';
-import { Users, Search, Activity, ExternalLink, X, Save, Ruler, Weight, Calendar, FileText, Box, Facebook, Twitter, Instagram, TrendingUp, Phone, User as UserIcon } from 'lucide-react';
+import { Users, Search, Activity, ExternalLink, X, Save, Ruler, Weight, Calendar, FileText, Box, Facebook, Twitter, Instagram, TrendingUp, Phone, User as UserIcon, Send } from 'lucide-react';
 import axios from 'axios';
 
 const MyMembers = () => {
@@ -17,6 +17,9 @@ const MyMembers = () => {
     const [selectedMemberProgress, setSelectedMemberProgress] = useState(null);
     const [progressData, setProgressData] = useState([]);
     const [showProgressModal, setShowProgressModal] = useState(false);
+    const [showMessageModal, setShowMessageModal] = useState(false);
+    const [selectedMemberForMsg, setSelectedMemberForMsg] = useState(null);
+    const [messageText, setMessageText] = useState('');
 
     const fetchMembers = async () => {
         try {
@@ -29,6 +32,29 @@ const MyMembers = () => {
             console.error(err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSendMessage = async () => {
+        if (!messageText || messageText.trim().length < 10) {
+            alert("Validation Error: Your advisory message must be at least 10 characters long to provide substantive value.");
+            return;
+        }
+
+        try {
+            const auth = JSON.parse(localStorage.getItem('auth'));
+            await axios.post('http://localhost:8080/api/trainer/send-member-message', {
+                memberId: selectedMemberForMsg.id,
+                message: messageText
+            }, {
+                headers: { Authorization: auth }
+            });
+            alert("Guidance message successfully dispatched!");
+            setShowMessageModal(false);
+            setMessageText('');
+        } catch (err) {
+            console.error(err);
+            alert("Failed to send message: " + (err.response?.data || err.message));
         }
     };
 
@@ -67,6 +93,12 @@ const MyMembers = () => {
             console.error("Failed to fetch progress", err);
             alert("Could not load member progress.");
         }
+    };
+
+    const openMessageModal = (member) => {
+        setSelectedMemberForMsg(member);
+        setMessageText('');
+        setShowMessageModal(true);
     };
 
     const SimpleChart = ({ data, dates, color, id }) => {
@@ -203,6 +235,26 @@ const MyMembers = () => {
                 }
             }
 
+            if (fitnessForm.allergies.trim() !== '' && fitnessForm.allergies.trim().length < 5) {
+                alert("Validation Error: Please provide a descriptive entry for 'Allergies' (at least 5 characters).");
+                return;
+            }
+
+            if (fitnessForm.healthDetails.trim() !== '' && fitnessForm.healthDetails.trim().length < 5) {
+                alert("Validation Error: 'Health Conditions & Notes' must be at least 5 characters long for professional clarity.");
+                return;
+            }
+
+            if (/\d/.test(fitnessForm.allergies)) {
+                alert("Validation Error: The 'Allergies' field must only contain descriptive text. Please remove any numbers.");
+                return;
+            }
+
+            if (/\d/.test(fitnessForm.healthDetails)) {
+                alert("Validation Error: 'Health Conditions & Notes' should be descriptive text only. Please remove any numbers.");
+                return;
+            }
+
             const dataToSync = {
                 memberId: editingMember.id,
                 age: fitnessForm.age === '' ? null : parseInt(fitnessForm.age),
@@ -292,6 +344,9 @@ const MyMembers = () => {
                                         </button>
                                         <button onClick={() => fetchMemberProgress(member)} className="bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-all text-sm w-full justify-center shadow-lg shadow-blue-500/20">
                                             <TrendingUp size={16} /> View Progress
+                                        </button>
+                                        <button onClick={() => openMessageModal(member)} className="bg-slate-100 text-slate-900 px-5 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-50 hover:text-blue-600 transition-all text-sm w-full justify-center border border-slate-200">
+                                            <Send size={16} /> Send Message
                                         </button>
                                     </div>
                                 </div>
@@ -605,6 +660,57 @@ const MyMembers = () => {
                                         <p className="text-emerald-600 text-[10px] font-black uppercase tracking-widest mb-1">Target Status</p>
                                         <p className="text-2xl font-black text-emerald-600">ACTIVE</p>
                                     </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                    {showMessageModal && selectedMemberForMsg && (
+                        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-xl">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                className="bg-white w-full max-w-lg rounded-[3rem] p-10 relative shadow-2xl"
+                            >
+                                <button 
+                                    onClick={() => setShowMessageModal(false)} 
+                                    className="absolute right-8 top-8 text-slate-400 hover:text-slate-900 transition-colors p-2 bg-slate-50 rounded-full"
+                                >
+                                    <X size={24} />
+                                </button>
+                                
+                                <div className="flex items-center gap-6 mb-8">
+                                    <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl font-black text-white">
+                                        <Activity size={32} />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-3xl font-black text-slate-900">Send Advisory</h2>
+                                        <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-1">Direct Message to {selectedMemberForMsg.username}</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black uppercase text-slate-400">Your Message (Min 10 Characters)</label>
+                                        <textarea 
+                                            value={messageText} 
+                                            onChange={e => setMessageText(e.target.value)} 
+                                            className="w-full bg-slate-50 p-6 rounded-[2rem] border border-slate-100 font-bold outline-none h-48 focus:ring-2 focus:ring-blue-500/10 transition-all"
+                                            placeholder="Provide technical feedback, nutritional guidance, or performance motivation..."
+                                        ></textarea>
+                                        <div className="flex justify-between px-1">
+                                            <p className={`text-[10px] font-black uppercase ${messageText.length < 10 ? 'text-red-400' : 'text-emerald-500'}`}>
+                                                Characters: {messageText.length} / 10 Min
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        onClick={handleSendMessage}
+                                        className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black text-lg shadow-xl flex items-center justify-center gap-3 hover:bg-blue-600 transition-all shadow-blue-500/10"
+                                    >
+                                        <Save size={24} /> Dispatch Message
+                                    </button>
                                 </div>
                             </motion.div>
                         </div>

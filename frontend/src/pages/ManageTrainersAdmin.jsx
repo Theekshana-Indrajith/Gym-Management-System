@@ -140,6 +140,7 @@ const ManageTrainersAdmin = () => {
                                         className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 font-bold"
                                         placeholder="Trainer Name"
                                         required
+                                        autoComplete="off"
                                     />
                                 </div>
                                 <div>
@@ -151,6 +152,7 @@ const ManageTrainersAdmin = () => {
                                         className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 font-bold"
                                         placeholder="trainer@musclehub.com"
                                         required
+                                        autoComplete="off"
                                     />
                                 </div>
                                 <div>
@@ -162,6 +164,7 @@ const ManageTrainersAdmin = () => {
                                         className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 font-bold"
                                         placeholder="••••••••"
                                         required
+                                        autoComplete="new-password"
                                     />
                                 </div>
                                 <button
