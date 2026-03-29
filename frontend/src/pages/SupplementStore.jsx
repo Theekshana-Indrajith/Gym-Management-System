@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MemberSidebar from '../components/MemberSidebar';
-import { ShoppingBag, Search, ShoppingCart, Star, Plus, Minus, Truck, Store, Phone, MapPin, X, CheckCircle2, Package, MessageSquare, Send, Clock, Reply, CreditCard, DollarSign, Image as ImageIcon, Download } from 'lucide-react';
+import { ShoppingBag, Search, ShoppingCart, Star, Plus, Minus, Truck, Store, Phone, MapPin, X, CheckCircle2, Package, MessageSquare, Send, Clock, Reply, CreditCard, DollarSign, Image as ImageIcon, Download, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,11 @@ const SupplementStore = () => {
     const [orders, setOrders] = useState([]);
     const [userRequests, setUserRequests] = useState([]); // Support/Inquiry requests
     const [walletBalance, setWalletBalance] = useState(0);
+    const [notifications, setNotifications] = useState([]);
+
+    // UI Enhancements State
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [cartAnimation, setCartAnimation] = useState(false);
 
     // Search & Request State
     const [searchQuery, setSearchQuery] = useState('');
@@ -39,7 +44,19 @@ const SupplementStore = () => {
         fetchProducts();
         fetchMyOrders();
         fetchMyRequests();
+        fetchNotifications();
     }, []);
+
+    const fetchNotifications = async () => {
+        try {
+            const auth = JSON.parse(localStorage.getItem('auth'));
+            if (!auth) return;
+            const res = await axios.get('http://localhost:8080/api/notifications/my', { headers: { Authorization: auth } });
+            setNotifications(res.data.filter(n => !n.read));
+        } catch (err) {
+            console.error("Failed to fetch notifications", err);
+        }
+    };
 
     const fetchMyRequests = async () => {
         try {
@@ -48,9 +65,32 @@ const SupplementStore = () => {
                 headers: { Authorization: auth }
             });
             // Show all inquiries or just filter for "Supplement Request" if desired
-            setUserRequests(res.data);
+            setUserRequests(res.data.sort((a, b) => b.id - a.id));
         } catch (err) {
             console.error("Failed to fetch requests", err);
+        }
+    };
+
+    const handleTabClick = async (tab) => {
+        setActiveTab(tab);
+        const auth = JSON.parse(localStorage.getItem('auth'));
+        if (!auth) return;
+
+        let targetType = null;
+        if (tab === 'orders') targetType = 'ORDER_UPDATE';
+        if (tab === 'requests') targetType = 'INQUIRY_REPLY';
+
+        if (targetType) {
+            const unreadOfThisType = notifications.filter(n => n.type === targetType && !n.read);
+            
+            if (unreadOfThisType.length > 0) {
+                for (const n of unreadOfThisType) {
+                    try {
+                        await axios.put(`http://localhost:8080/api/notifications/${n.id}/read`, {}, { headers: { Authorization: auth } });
+                    } catch(e) { console.error(e) }
+                }
+                fetchNotifications();
+            }
         }
     };
 
@@ -100,6 +140,88 @@ const SupplementStore = () => {
         }
     };
 
+    const getStatusStep = (status) => {
+        const flow = {
+            'PENDING': 1,
+            'AWAITING_PAYMENT_APPROVAL': 2,
+            'PAYMENT_VERIFIED': 3,
+            'PREPARED': 4,
+            'SHIPPED': 5,
+            'COMPLETED': 6,
+            'CANCELLED': 0
+        };
+        return flow[status] || 1;
+    };
+
+    const renderOrderTimeline = (order) => {
+        const status = order.status;
+        if (status === 'CANCELLED') return null;
+        const currentStep = getStatusStep(status);
+        
+        const steps = [
+            { id: 1, label: 'Placed', icon: ShoppingBag },
+            { id: 2, label: 'In Review', icon: Search },
+            { id: 3, label: 'Confirmed', icon: DollarSign },
+            { id: 4, label: 'Prepared', icon: Package },
+            { id: 5, label: order.deliveryMethod === 'PICKUP' ? 'Ready' : 'Shipped', icon: Truck },
+            { id: 6, label: 'Finalized', icon: CheckCircle2 }
+        ];
+
+        return (
+            <div className="py-10 px-4 mb-8 bg-slate-50/50 rounded-[2.5rem] border border-slate-100/50 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5">
+                    <Package size={80} className="rotate-12" />
+                </div>
+                <div className="relative flex justify-between items-center max-w-2xl mx-auto">
+                    {/* Background Line */}
+                    <div className="absolute top-5 left-0 w-full h-[3px] bg-slate-200 z-0 rounded-full"></div>
+                    
+                    {/* Progress Line */}
+                    <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+                        className="absolute top-5 left-0 h-[3px] bg-blue-600 z-0 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]"
+                    ></motion.div>
+    
+                    {steps.map((step) => {
+                        const Icon = step.icon;
+                        const isCompleted = currentStep >= step.id;
+                        const isCurrent = currentStep === step.id;
+    
+                        return (
+                            <div key={step.id} className="relative z-10 flex flex-col items-center gap-3">
+                                <motion.div 
+                                    animate={isCurrent ? { 
+                                        scale: [1, 1.15, 1],
+                                        boxShadow: ["0 0 0px rgba(37,99,235,0)", "0 0 20px rgba(37,99,235,0.4)", "0 0 0px rgba(37,99,235,0)"]
+                                    } : {}}
+                                    transition={{ repeat: Infinity, duration: 2.5 }}
+                                    className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-700 ${
+                                        isCompleted 
+                                        ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-500/20' 
+                                        : 'bg-white border-slate-200 text-slate-300'
+                                    }`}
+                                >
+                                    {isCompleted && !isCurrent ? <CheckCircle2 size={18} /> : <Icon size={18} />}
+                                </motion.div>
+                                <div className="text-center">
+                                    <p className={`text-[9px] font-black uppercase tracking-[0.15em] leading-none mb-1 ${
+                                        isCompleted ? 'text-blue-600' : 'text-slate-400'
+                                    }`}>
+                                        {step.label}
+                                    </p>
+                                    {isCurrent && (
+                                        <p className="text-[8px] font-bold text-slate-400 italic lowercase tracking-tight">current</p>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    };
+
     const fetchProducts = async () => {
         try {
             const auth = JSON.parse(localStorage.getItem('auth'));
@@ -131,6 +253,8 @@ const SupplementStore = () => {
 
     const addToCart = (id) => {
         setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+        setCartAnimation(true);
+        setTimeout(() => setCartAnimation(false), 300);
     };
 
     const removeFromCart = (id) => {
@@ -364,22 +488,32 @@ const SupplementStore = () => {
                             </div>
                             <div className="bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm flex gap-2 w-max">
                                 <button
-                                    onClick={() => setActiveTab('shop')}
+                                    onClick={() => handleTabClick('shop')}
                                     className={`px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'shop' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
                                 >
                                     <ShoppingBag size={18} /> Shop
                                 </button>
                                 <button
-                                    onClick={() => setActiveTab('orders')}
-                                    className={`px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'orders' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+                                    onClick={() => handleTabClick('orders')}
+                                    className={`relative px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'orders' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
                                 >
                                     <Package size={18} /> My Orders
+                                    {notifications.filter(n => n.type === 'ORDER_UPDATE').length > 0 && 
+                                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-pulse border-2 border-white shadow-lg shadow-red-500/30">
+                                            {notifications.filter(n => n.type === 'ORDER_UPDATE').length}
+                                        </span>
+                                    }
                                 </button>
                                 <button
-                                    onClick={() => setActiveTab('requests')}
-                                    className={`px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'requests' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+                                    onClick={() => handleTabClick('requests')}
+                                    className={`relative px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'requests' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
                                 >
                                     <MessageSquare size={18} /> My Requests
+                                    {notifications.filter(n => n.type === 'INQUIRY_REPLY').length > 0 && 
+                                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-pulse border-2 border-white shadow-lg shadow-red-500/30">
+                                            {notifications.filter(n => n.type === 'INQUIRY_REPLY').length}
+                                        </span>
+                                    }
                                 </button>
                             </div>
 
@@ -415,16 +549,22 @@ const SupplementStore = () => {
                                     {filteredProducts.length > 0 ? (
                                         filteredProducts.map((product) => (
                                             <motion.div layout id={`product-${product.id}`} key={product.id} className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
-                                                <div className={`h-40 ${product.color} rounded-3xl mb-6 relative overflow-hidden p-6 text-white`}>
+                                                <div 
+                                                    onClick={() => setSelectedProduct(product)}
+                                                    className={`h-40 ${product.color} rounded-3xl mb-6 relative overflow-hidden p-6 text-white cursor-pointer group/img`}
+                                                >
                                                     {product.image ? (
                                                         <>
-                                                            <img src={product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover z-0" />
-                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10" />
+                                                            <img src={product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover z-0 group-hover/img:scale-110 transition-transform duration-700" />
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10 opacity-60 group-hover/img:opacity-80 transition-opacity" />
                                                         </>
                                                     ) : (
-                                                        <ShoppingBag size={80} className="absolute -right-4 -bottom-4 opacity-20 rotate-12" />
+                                                        <ShoppingBag size={80} className="absolute -right-4 -bottom-4 opacity-20 rotate-12 group-hover/img:scale-110 transition-transform duration-700" />
                                                     )}
-                                                    <span className="relative z-20 bg-white/20 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-white/20">{product.category}</span>
+                                                    <span className="relative z-20 bg-white/20 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-white/20 shadow-lg">{product.category}</span>
+                                                    <div className="absolute inset-0 z-30 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                                                        <span className="text-white text-[10px] font-black uppercase tracking-widest bg-white/20 px-4 py-2 rounded-xl border border-white/30 shadow-2xl">Quick View</span>
+                                                    </div>
                                                 </div>
                                                 <h3 className="text-xl font-bold text-slate-900 mb-1 leading-tight">{product.name}</h3>
                                                 <p className="text-slate-400 text-sm font-bold mb-4 uppercase tracking-tighter">{product.brand}</p>
@@ -497,6 +637,8 @@ const SupplementStore = () => {
                                                     {order.status}
                                                 </div>
                                             </div>
+
+                                            {renderOrderTimeline(order)}
 
                                             <div className="grid md:grid-cols-2 gap-8 py-6 border-y border-slate-50">
                                                 <div className="space-y-3">
@@ -650,7 +792,10 @@ const SupplementStore = () => {
                     {/* Mini Cart Sidebar */}
                     <aside className="w-80 h-fit bg-white text-slate-900 border border-slate-100 shadow-xl rounded-[2.5rem] p-8 shadow-2xl sticky top-10 flex flex-col">
                         <h3 className="text-2xl font-bold mb-8 flex items-center justify-between">
-                            Cart <ShoppingCart size={24} className="text-blue-400" />
+                            Cart 
+                            <motion.div animate={cartAnimation ? { scale: [1, 1.5, 0.9, 1.1, 1], rotate: [0, -10, 10, -5, 0] } : {}} transition={{ duration: 0.5 }}>
+                                <ShoppingCart size={24} className="text-blue-400" />
+                            </motion.div>
                         </h3>
                         <div className="space-y-6 max-h-[400px] overflow-y-auto mb-8 pr-2 custom-scrollbar flex-1">
                             <AnimatePresence>
@@ -952,6 +1097,87 @@ const SupplementStore = () => {
                     </div>
                 )}
             </AnimatePresence>
+            {/* Quick View Product Modal */}
+            <AnimatePresence>
+                {selectedProduct && (
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-6">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedProduct(null)} />
+                        <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-white max-w-4xl w-full rounded-[3.5rem] p-4 relative z-10 shadow-2xl overflow-hidden flex flex-col md:flex-row gap-8 items-stretch min-h-[400px]">
+                            
+                            {/* Left Image Side */}
+                            <div className={`w-full md:w-1/2 ${selectedProduct.color} rounded-[3rem] relative overflow-hidden flex items-center justify-center p-12 shrink-0 group`}>
+                                {selectedProduct.image ? (
+                                    <>
+                                        <img src={selectedProduct.image} alt={selectedProduct.name} className="absolute inset-0 w-full h-full object-cover z-0 group-hover:scale-110 transition-transform duration-700" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10" />
+                                    </>
+                                ) : (
+                                    <ShoppingBag size={120} className="text-white opacity-20 rotate-12" />
+                                )}
+                                <div className="absolute top-6 left-6 z-20">
+                                    <span className="bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border border-white/20 shadow-lg">{selectedProduct.category}</span>
+                                </div>
+                                <div className="absolute bottom-8 left-8 right-8 z-20">
+                                    <p className="text-white/80 text-xs font-bold uppercase tracking-widest mb-1">{selectedProduct.brand}</p>
+                                    <h3 className="text-3xl font-black text-white leading-tight">{selectedProduct.name}</h3>
+                                </div>
+                            </div>
+
+                            {/* Right Details Side */}
+                            <div className="w-full md:w-1/2 p-6 flex flex-col justify-between relative">
+                                <button onClick={() => setSelectedProduct(null)} className="absolute top-2 right-2 w-12 h-12 bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full flex items-center justify-center transition-all">
+                                    <X size={20} />
+                                </button>
+                                
+                                <div>
+                                    <h4 className="text-slate-900 text-2xl font-black mb-4">LKR {selectedProduct.price.toLocaleString()}</h4>
+                                    
+                                    <div className="space-y-6">
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Description</p>
+                                            <p className="text-slate-600 text-sm font-medium leading-relaxed">
+                                                {selectedProduct.description || "Premium quality supplement crafted for maximum absorption and performance. Enhance your training regimen with this elite-grade formulation."}
+                                            </p>
+                                        </div>
+                                        
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Supplement Facts</p>
+                                            <div className="bg-slate-50 rounded-2xl p-4 grid grid-cols-2 gap-4 border border-slate-100">
+                                                <div>
+                                                    <span className="block text-[10px] text-slate-400 font-bold uppercase">Weight/Volume</span>
+                                                    <span className="text-sm font-black text-slate-900">Standard Pack</span>
+                                                </div>
+                                                <div>
+                                                    <span className="block text-[10px] text-slate-400 font-bold uppercase">Availability</span>
+                                                    <span className={`text-sm font-black ${selectedProduct.stock > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                        {selectedProduct.stock > 0 ? `${selectedProduct.stock} in stock` : 'Out of Stock'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 pt-6 border-t border-slate-100 flex items-center gap-4">
+                                    <button
+                                        onClick={() => {
+                                            addToCart(selectedProduct.id);
+                                            setSelectedProduct(null);
+                                        }}
+                                        disabled={selectedProduct.stock <= 0 || (cart[selectedProduct.id] && cart[selectedProduct.id] >= selectedProduct.stock)}
+                                        className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-black uppercase tracking-widest py-5 rounded-2xl transition-all shadow-xl shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-3 disabled:shadow-none"
+                                    >
+                                        <ShoppingCart size={20} />
+                                        {selectedProduct.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                                    </button>
+                                </div>
+                            </div>
+
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
             {/* Request Supplement Modal */}
             <AnimatePresence>
                 {showRequestModal && (

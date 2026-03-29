@@ -4,6 +4,7 @@ import com.musclehub.backend.entity.*;
 import com.musclehub.backend.repository.SupplementOrderRepository;
 import com.musclehub.backend.repository.SupplementRepository;
 import com.musclehub.backend.repository.UserRepository;
+import com.musclehub.backend.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ public class SupplementOrderService {
     private final SupplementOrderRepository orderRepository;
     private final SupplementRepository supplementRepository;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
 
     @Transactional
     public SupplementOrder placeOrder(String username, SupplementOrder orderDetails, Map<Long, Integer> cartItems) {
@@ -128,8 +130,22 @@ public class SupplementOrderService {
     public SupplementOrder updateOrderStatus(Long orderId, SupplementOrder.OrderStatus status) {
         SupplementOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
+                
+        SupplementOrder.OrderStatus oldStatus = order.getStatus();
         order.setStatus(status);
-        return orderRepository.save(order);
+        SupplementOrder savedOrder = orderRepository.save(order);
+        
+        if (oldStatus != SupplementOrder.OrderStatus.SHIPPED && status == SupplementOrder.OrderStatus.SHIPPED) {
+            Notification notification = new Notification();
+            notification.setTitle("Order Shipped!");
+            notification.setMessage("Great news! Your supplement order #" + order.getId() + " has been shipped and is on its way.");
+            notification.setType("ORDER_UPDATE");
+            notification.setUser(order.getUser());
+            notification.setRead(false);
+            notificationRepository.save(notification);
+        }
+        
+        return savedOrder;
     }
 
     @Transactional
@@ -155,11 +171,19 @@ public class SupplementOrderService {
             throw new RuntimeException("Unauthorized");
         }
 
-        // Only allow cancellation in certain states
+        // 1. Status-based restriction
         if (order.getStatus() == SupplementOrder.OrderStatus.SHIPPED || 
             order.getStatus() == SupplementOrder.OrderStatus.COMPLETED || 
             order.getStatus() == SupplementOrder.OrderStatus.CANCELLED) {
-            throw new RuntimeException("Order cannot be cancelled in its current state.");
+            throw new RuntimeException("This order has already been processed or cancelled and cannot be changed.");
+        }
+
+        // 2. Time-based restriction (Only for members, admins can always cancel)
+        if (!isAdmin) {
+            LocalDateTime orderTime = order.getOrderDate();
+            if (orderTime != null && orderTime.plusHours(24).isBefore(LocalDateTime.now())) {
+                throw new RuntimeException("Cancellation window expired. Orders can only be cancelled within 24 hours.");
+            }
         }
 
         // Restock items
@@ -169,24 +193,19 @@ public class SupplementOrderService {
             supplementRepository.save(s);
         }
 
-        // Refund to wallet if it was an online payment attempt
+        // Refund Logic (For both Online and Wallet payments)
         System.out.println(">>> [DEBUG] Processing cancellation for Order: " + order.getId());
-        System.out.println(">>> [DEBUG] Payment Method: " + order.getPaymentMethod());
-        System.out.println(">>> [DEBUG] Current Status: " + order.getStatus());
-
-        if (order.getPaymentMethod() == SupplementOrder.PaymentMethod.ONLINE_PAYMENT) {
+        
+        if (order.getPaymentMethod() == SupplementOrder.PaymentMethod.ONLINE_PAYMENT || 
+            order.getPaymentMethod() == SupplementOrder.PaymentMethod.WALLET) {
+            
             double amountToRefund = order.getTotalPrice() != null ? order.getTotalPrice() : 0.0;
             double currentBalance = (user.getWalletBalance() != null) ? user.getWalletBalance() : 0.0;
             double newBalance = currentBalance + amountToRefund;
             
-            System.out.println(">>> [DEBUG] REFUND TRIGGERED. User: " + user.getUsername());
-            System.out.println(">>> [DEBUG] Old Balance: " + currentBalance + " | Refund: " + amountToRefund + " | New Balance: " + newBalance);
-            
+            System.out.println(">>> [DEBUG] REFUND TRIGGERED. Method: " + order.getPaymentMethod());
             user.setWalletBalance(newBalance);
             userRepository.save(user);
-            System.out.println(">>> [DEBUG] User saved with new balance.");
-        } else {
-            System.out.println(">>> [DEBUG] REFUND SKIPPED. Not an online payment.");
         }
 
         order.setStatus(SupplementOrder.OrderStatus.CANCELLED);
