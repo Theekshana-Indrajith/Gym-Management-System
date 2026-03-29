@@ -174,8 +174,21 @@ const MealPlanManagement = () => {
         }
     };
 
+    const deactivatePlan = async (id) => {
+        if (!window.confirm("Are you sure you want to stop this plan? It will be moved to the history section.")) return;
+        try {
+            const auth = JSON.parse(localStorage.getItem('auth'));
+            await axios.post(`http://localhost:8080/api/meal-plans/${id}/deactivate`, {}, {
+                headers: { Authorization: auth }
+            });
+            fetchPlans(user);
+        } catch (err) {
+            alert("Deactivation failed.");
+        }
+    };
+
     const deletePlan = async (id) => {
-        if (!window.confirm("Delete this plan?")) return;
+        if (!window.confirm("Permanently delete this plan record from the system?")) return;
         try {
             const auth = JSON.parse(localStorage.getItem('auth'));
             await axios.delete(`http://localhost:8080/api/meal-plans/${id}`, {
@@ -216,7 +229,7 @@ const MealPlanManagement = () => {
                                 <AdminHeader title="Meal Plans" subtitle="Monitor and manage all system dietary routines." lightTheme={true} />
                             )}
 
-                            {!isMember && (
+                            {isTrainer && (
                                 <div className="mt-8 flex justify-between items-end">
                                     <div>
                                         <div className="flex items-center gap-2 mb-2 text-emerald-400">
@@ -334,12 +347,14 @@ const MealPlanManagement = () => {
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    <button
-                                                        onClick={() => navigate('/member/store')}
-                                                        className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-all opacity-0 group-hover/supp:opacity-100"
-                                                    >
-                                                        Buy in Store
-                                                    </button>
+                                                    {isMember && (
+                                                        <button
+                                                            onClick={() => navigate('/member/store')}
+                                                            className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-all opacity-0 group-hover/supp:opacity-100"
+                                                        >
+                                                            Buy in Store
+                                                        </button>
+                                                    )}
                                                 </div>
                                             )}
 
@@ -409,9 +424,12 @@ const MealPlanManagement = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            {user?.role !== 'MEMBER' && (
-                                                <button onClick={() => deletePlan(plan.id)} className="p-2 text-slate-600 hover:text-red-500 transition-colors">
-                                                    <Trash2 size={18} />
+                                            {user?.role === 'TRAINER' && plan.isActive && (
+                                                <button 
+                                                    onClick={() => deactivatePlan(plan.id)} 
+                                                    className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-sm border border-red-100"
+                                                >
+                                                    <X size={14} /> Stop Plan
                                                 </button>
                                             )}
                                         </div>
@@ -435,12 +453,14 @@ const MealPlanManagement = () => {
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <button
-                                                    onClick={() => navigate('/member/store')}
-                                                    className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-all opacity-0 group-hover/supp:opacity-100"
-                                                >
-                                                    Buy in Store
-                                                </button>
+                                                {isMember && (
+                                                    <button
+                                                        onClick={() => navigate('/member/store')}
+                                                        className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-all opacity-0 group-hover/supp:opacity-100"
+                                                    >
+                                                        Buy in Store
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
 
@@ -482,7 +502,7 @@ const MealPlanManagement = () => {
 
                 </div>
 
-                {/* Trainer Only: AI Generation Quick Select */}
+                {/* Trainer Only: AI Generation Quick Select
                 {user?.role === 'TRAINER' && (
                     <div className="mt-12 bg-emerald-600 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden">
                         <div className="relative z-10">
@@ -509,7 +529,7 @@ const MealPlanManagement = () => {
                         </div>
                         <BrainCircuit className="absolute right-[-5%] bottom-[-10%] w-64 h-64 text-white/10" />
                     </div>
-                )}
+                )} */}
 
                 {/* Manual Plan Modal */}
                 <AnimatePresence>
@@ -628,7 +648,7 @@ const MealPlanManagement = () => {
                                                             const cals = (food.caloriesPer100g / 100) * grams;
                                                             const newList = [...selectedFoods, { name: food.name, grams, cals }];
                                                             setSelectedFoods(newList);
-                                                            
+
                                                             const totalCals = newList.reduce((acc, f) => acc + f.cals, 0);
                                                             const mealText = newList.map(f => `${f.name}: ${f.grams}g`).join('\n');
                                                             setNewPlan(prev => ({ ...prev, dailyCalories: Math.round(totalCals), meals: mealText }));

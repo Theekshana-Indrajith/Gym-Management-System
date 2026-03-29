@@ -99,6 +99,22 @@ public class WorkoutPlanService {
         return workoutPlanRepository.save(plan);
     }
 
+    @Transactional
+    public void deactivatePlan(Long id, String trainerUsername) {
+        User trainer = userRepository.findByUsername(trainerUsername)
+                .orElseThrow(() -> new RuntimeException("Trainer not found"));
+
+        if (trainer.getRole() != User.Role.TRAINER && trainer.getRole() != User.Role.ADMIN) {
+            throw new RuntimeException("Only trainers can manage workout plans");
+        }
+
+        WorkoutPlan plan = workoutPlanRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Workout plan not found"));
+        
+        plan.setStatus(WorkoutPlan.PlanStatus.ARCHIVED);
+        workoutPlanRepository.save(plan);
+    }
+
     public void deletePlan(Long id, String trainerUsername) {
         User trainer = userRepository.findByUsername(trainerUsername)
                 .orElseThrow(() -> new RuntimeException("Trainer not found"));

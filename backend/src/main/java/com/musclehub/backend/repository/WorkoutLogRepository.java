@@ -13,4 +13,9 @@ public interface WorkoutLogRepository extends JpaRepository<WorkoutLog, Long> {
     List<WorkoutLog> findByMemberAndDateBetweenOrderByDateDesc(User member, LocalDate start, LocalDate end);
 
     List<WorkoutLog> findByMemberId(Long memberId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @org.springframework.data.jpa.repository.Query("DELETE FROM WorkoutLog w WHERE w.member.id = :memberId")
+    void deleteByUserId(Long memberId);
 }

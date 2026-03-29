@@ -35,16 +35,7 @@ const MemberWorkoutTracking = () => {
             const storedUser = JSON.parse(localStorage.getItem('user'));
             setUser(storedUser);
             
-            // Local YYYY-MM-DD generation
-            const dateStr = selectedDate.toLocaleDateString('en-CA');
-            const savedProgress = localStorage.getItem(`workout_progress_${storedUser.id}_${dateStr}`);
-            
-            if (savedProgress) {
-                setLogStatus(JSON.parse(savedProgress));
-            } else {
-                setLogStatus({});
-            }
-            await fetchData(storedUser.id);
+            await fetchData(storedUser.id, selectedDate);
             await fetchEquipmentStatus();
         };
         init();
@@ -62,7 +53,7 @@ const MemberWorkoutTracking = () => {
         }
     };
 
-    const fetchData = async (memberId) => {
+    const fetchData = async (memberId, dateObj) => {
         try {
             const auth = JSON.parse(localStorage.getItem('auth'));
             if (!auth) return;
@@ -86,9 +77,32 @@ const MemberWorkoutTracking = () => {
             setCurrentPlan(current || null);
             setHistory(past);
 
+            // Read Local Storage explicitly keyed by display plan for that date
+            if (dateObj) {
+                const selDate = new Date(dateObj);
+                selDate.setHours(0,0,0,0);
+                const disp = allPlans.find(p => {
+                    const pd = new Date(p.createdDate);
+                    pd.setHours(0,0,0,0);
+                    return pd <= selDate;
+                });
+
+                const dateStr = dateObj.toLocaleDateString('en-CA');
+                const planKey = disp ? disp.id : 'noplan';
+                const savedProgress = localStorage.getItem(`workout_progress_${memberId}_${planKey}_${dateStr}`);
+                if (savedProgress) {
+                    setLogStatus(JSON.parse(savedProgress));
+                } else {
+                    setLogStatus({});
+                }
+            }
+
             // 2. Fetch Weekly Summary
             try {
-                const summaryRes = await axios.get(`http://localhost:8080/api/workout-plans/weekly-summary`, { headers });
+                const url = current 
+                    ? `http://localhost:8080/api/workout-plans/weekly-summary?planId=${current.id}` 
+                    : `http://localhost:8080/api/workout-plans/weekly-summary`;
+                const summaryRes = await axios.get(url, { headers });
                 setWeeklySummary(summaryRes.data);
             } catch (summaryErr) {
                 console.warn("Summary fetch failed, might be new user", summaryErr);
@@ -131,9 +145,22 @@ const MemberWorkoutTracking = () => {
         return [];
     };
 
+    const isAlreadyLogged = (date) => {
+        if (!weeklySummary || !weeklySummary.logs) return false;
+        const dateStr = date.toLocaleDateString('en-CA');
+        return weeklySummary.logs.some(log => log.date === dateStr);
+    };
+
     const handleTick = (id) => {
         // Validation: Cannot tick for future dates
         if (selectedDate > new Date()) return;
+        if (!currentPlan) return;
+        
+        // Validation: Cannot edit if already logged in DB
+        if (isAlreadyLogged(selectedDate)) {
+            alert("This session is already recorded in your history and is now locked for integrity.");
+            return;
+        }
 
         const newStatus = {
             ...logStatus,
@@ -141,7 +168,7 @@ const MemberWorkoutTracking = () => {
         };
         setLogStatus(newStatus);
         const dateStr = selectedDate.toLocaleDateString('en-CA');
-        localStorage.setItem(`workout_progress_${user.id}_${dateStr}`, JSON.stringify(newStatus));
+        localStorage.setItem(`workout_progress_${user.id}_${currentPlan.id}_${dateStr}`, JSON.stringify(newStatus));
     };
 
     const submitDailyLog = async () => {
@@ -264,82 +291,159 @@ const MemberWorkoutTracking = () => {
                                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Check as you finish each set</div>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-4xl font-black text-blue-600 tracking-tighter">{calculateDailyProgress()}%</div>
+                                            <div className="text-4xl font-black text-blue-600 tracking-tighter">{currentPlan ? calculateDailyProgress() : 0}%</div>
                                             <div className="text-[10px] font-black text-slate-400 uppercase">Focus Rate</div>
                                         </div>
                                     </div>
 
                                     <div className="p-8 space-y-4">
-                                        {currentPlan ? (
-                                            parseExercises(currentPlan.exercises).map((ex) => (
-                                                <div 
-                                                    key={ex.id}
-                                                    onClick={() => handleTick(ex.id)}
-                                                    className={`group flex items-center justify-between p-6 rounded-3xl border-2 transition-all cursor-pointer ${
-                                                        logStatus[ex.id] 
-                                                        ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500/5' 
-                                                        : 'bg-white border-slate-50 hover:border-blue-100'
-                                                    }`}
-                                                >
-                                                    <div className="flex items-center gap-5 flex-1">
-                                                        <div className={`w-10 h-10 rounded-2xl border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                                                            logStatus[ex.id] ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/30' : 'border-slate-100 bg-slate-50'
-                                                        }`}>
-                                                            {logStatus[ex.id] && <CheckCircle size={20} />}
-                                                        </div>
-                                                            <div className="flex flex-col">
-                                                                <span className={`text-lg font-black tracking-tight ${logStatus[ex.id] ? 'text-slate-900 line-through opacity-40' : 'text-slate-900'}`}>
-                                                                    {ex.name}
-                                                                </span>
-                                                                <div className="flex items-center gap-3 mt-1 flex-wrap">
-                                                                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
-                                                                        !ex.isWorking ? 'bg-red-500 text-white' : 
-                                                                        logStatus[ex.id] ? 'bg-slate-100 text-slate-400' : 'bg-blue-50 text-blue-600'}`}>
-                                                                        {ex.equipmentName || 'No Equipment'} {!ex.isWorking && '(BROKEN)'}
-                                                                    </span>
-                                                                    {ex.setsReps && (
-                                                                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${logStatus[ex.id] ? 'bg-slate-100 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
-                                                                            {ex.setsReps}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                
-                                                                {/* Alternative Recommendation if Broken */}
-                                                                {!ex.isWorking && (
-                                                                    <motion.div 
-                                                                        initial={{ opacity: 0, height: 0 }}
-                                                                        animate={{ opacity: 1, height: 'auto' }}
-                                                                        className="mt-3 bg-red-50 border border-red-100 p-3 rounded-2xl flex items-center gap-3"
-                                                                    >
-                                                                        <div className="w-6 h-6 bg-red-500 text-white rounded-lg flex items-center justify-center animate-pulse">
-                                                                            <AlertTriangle size={12} />
-                                                                        </div>
-                                                                        <div className="text-[10px] font-bold text-red-700 leading-tight">
-                                                                            <span className="uppercase tracking-widest block opacity-70">Strategic Alternate</span>
-                                                                            Use <span className="underline decoration-2">{ex.alternativeName}</span> instead today.
-                                                                        </div>
-                                                                    </motion.div>
-                                                                )}
-                                                            </div>
+                                        {(() => {
+                                            // Calculate which plan belongs to this date
+                                            let allP = [];
+                                            if (currentPlan) allP.push(currentPlan);
+                                            allP = [...allP, ...history].sort((a,b) => b.id - a.id);
+                                            
+                                            if (allP.length === 0) {
+                                                return (
+                                                    <div className="py-20 text-center">
+                                                        <RefreshCw size={40} className="mx-auto text-slate-200 animate-spin-slow mb-6" />
+                                                        <p className="text-slate-400 font-black uppercase text-xs tracking-widest italic">Awaiting Trainer's Master Plan</p>
                                                     </div>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="py-20 text-center">
-                                                <RefreshCw size={40} className="mx-auto text-slate-200 animate-spin-slow mb-6" />
-                                                <p className="text-slate-400 font-black uppercase text-xs tracking-widest italic">Awaiting Trainer's Master Plan</p>
-                                            </div>
-                                        )}
+                                                );
+                                            }
+
+                                            const selDate = new Date(selectedDate);
+                                            selDate.setHours(0,0,0,0);
+                                            
+                                            const displayPlan = allP.find(p => {
+                                                const pd = new Date(p.createdDate);
+                                                pd.setHours(0,0,0,0);
+                                                return pd <= selDate;
+                                            });
+
+                                            if (!displayPlan) {
+                                                const firstPlanDate = new Date(allP[allP.length-1].createdDate);
+                                                return (
+                                                    <div className="py-20 text-center">
+                                                        <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-200">
+                                                            <Clock className="text-slate-400" size={24} />
+                                                        </div>
+                                                        <h4 className="text-slate-900 font-black uppercase text-sm tracking-widest mb-1">Pre-Protocol Era</h4>
+                                                        <p className="text-slate-400 font-bold text-[10px] tracking-widest uppercase leading-relaxed max-w-xs mx-auto">
+                                                            Your first plan was initiated on {firstPlanDate.toLocaleDateString()}.<br/>
+                                                            Past records are secured in the Weekly Glory logs.
+                                                        </p>
+                                                    </div>
+                                                );
+                                            }
+
+                                            const isPastPlan = currentPlan && displayPlan.id !== currentPlan.id;
+                                            const loggedInDb = isAlreadyLogged(selectedDate);
+
+                                            return (
+                                                <>
+                                                    {loggedInDb && (
+                                                        <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between">
+                                                            <div className="flex items-center gap-3">
+                                                                <CheckCircle className="text-emerald-500" size={20} />
+                                                                <div>
+                                                                    <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Protocol Secured</div>
+                                                                    <div className="text-sm font-bold text-emerald-800">Session successfully recorded</div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="px-3 py-1 bg-emerald-100/50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-xl">Verified</div>
+                                                        </div>
+                                                    )}
+
+                                                    {isPastPlan && !loggedInDb && (
+                                                        <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-2xl flex items-center justify-between">
+                                                            <div className="flex items-center gap-3">
+                                                                <Clock className="text-orange-500" size={20} />
+                                                                <div>
+                                                                    <div className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Archive Viewer</div>
+                                                                    <div className="text-sm font-bold text-orange-800">Viewing past protocol</div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="px-3 py-1 bg-orange-100/50 text-orange-600 text-[10px] font-black uppercase tracking-widest rounded-xl">Read-Only</div>
+                                                        </div>
+                                                    )}
+
+                                                    {parseExercises(displayPlan.exercises).map((ex) => (
+                                                        <div 
+                                                            key={ex.id}
+                                                            onClick={() => !isPastPlan && !loggedInDb && handleTick(ex.id)}
+                                                            className={`group flex items-center justify-between p-6 rounded-3xl border-2 transition-all ${
+                                                                (isPastPlan || loggedInDb) ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
+                                                            } ${
+                                                                logStatus[ex.id] 
+                                                                ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500/5' 
+                                                                : 'bg-white border-slate-50 hover:border-blue-100'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center gap-5 flex-1">
+                                                                <div className={`w-10 h-10 rounded-2xl border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                                                                    logStatus[ex.id] ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/30' : 'border-slate-100 bg-slate-50'
+                                                                }`}>
+                                                                    {logStatus[ex.id] && <CheckCircle size={20} />}
+                                                                </div>
+                                                                    <div className="flex flex-col">
+                                                                        <span className={`text-lg font-black tracking-tight ${logStatus[ex.id] ? 'text-slate-900 line-through opacity-40' : 'text-slate-900'}`}>
+                                                                            {ex.name}
+                                                                        </span>
+                                                                        <div className="flex items-center gap-3 mt-1 flex-wrap">
+                                                                            <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
+                                                                                !ex.isWorking ? 'bg-red-500 text-white' : 
+                                                                                logStatus[ex.id] ? 'bg-slate-100 text-slate-400' : 'bg-blue-50 text-blue-600'}`}>
+                                                                                {ex.equipmentName || 'No Equipment'} {!ex.isWorking && '(BROKEN)'}
+                                                                            </span>
+                                                                            {ex.setsReps && (
+                                                                                <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${logStatus[ex.id] ? 'bg-slate-100 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
+                                                                                    {ex.setsReps}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        
+                                                                        {/* Alternative Recommendation if Broken */}
+                                                                        {!ex.isWorking && (
+                                                                            <motion.div 
+                                                                                initial={{ opacity: 0, height: 0 }}
+                                                                                animate={{ opacity: 1, height: 'auto' }}
+                                                                                className="mt-3 bg-red-50 border border-red-100 p-3 rounded-2xl flex items-center gap-3"
+                                                                            >
+                                                                                <div className="w-6 h-6 bg-red-500 text-white rounded-lg flex items-center justify-center animate-pulse">
+                                                                                    <AlertTriangle size={12} />
+                                                                                </div>
+                                                                                <div className="text-[10px] font-bold text-red-700 leading-tight">
+                                                                                    <span className="uppercase tracking-widest block opacity-70">Strategic Alternate</span>
+                                                                                    Use <span className="underline decoration-2">{ex.alternativeName}</span> instead today.
+                                                                                </div>
+                                                                            </motion.div>
+                                                                        )}
+                                                                    </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </>
+                                            );
+                                        })()}
                                     </div>
 
                                     <div className="p-8 pt-0">
+                                        {!isAlreadyLogged(selectedDate) && (
+                                            <div className="mb-4 flex items-center gap-2 text-slate-400 bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200">
+                                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">
+                                                    Ensure all discipline targets are ticked before recording. Sessions are finalized upon submission.
+                                                </p>
+                                            </div>
+                                        )}
                                         <button 
                                             onClick={submitDailyLog}
-                                            disabled={isSubmitting || !currentPlan || selectedDate > new Date()}
+                                            disabled={isSubmitting || !currentPlan || selectedDate > new Date() || isAlreadyLogged(selectedDate) || (currentPlan && new Date(selectedDate).setHours(0,0,0,0) < new Date(currentPlan.createdDate).setHours(0,0,0,0))}
                                             className="w-full bg-blue-600 text-white py-6 rounded-3xl font-black text-lg flex items-center justify-center gap-3 hover:bg-slate-900 transition-all shadow-xl shadow-blue-500/20 disabled:opacity-50 group"
                                         >
                                             <Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 
-                                            {selectedDate > new Date() ? 'Locked (Future)' : (isSubmitting ? 'Recording Grit...' : `Record Performance`)}
+                                            {selectedDate > new Date() ? 'Locked (Future)' : (isAlreadyLogged(selectedDate) ? 'Protocol Secured (Logged)' : (currentPlan && new Date(selectedDate).setHours(0,0,0,0) < new Date(currentPlan.createdDate).setHours(0,0,0,0) ? 'Locked (Past Protocol)' : (isSubmitting ? 'Recording Grit...' : `Record Performance`)))}
                                         </button>
                                     </div>
                                 </motion.div>

@@ -10,6 +10,16 @@ import MemberHeader from '../components/MemberHeader';
 import AdminHeader from '../components/AdminHeader';
 import TrainerHeader from '../components/TrainerHeader';
 
+const EXERCISE_LIBRARY = {
+    'Chest': ['Bench Press', 'Incline Press', 'Dumbbell Fly', 'Push Ups', 'Cable Crossover'],
+    'Back': ['Pull-ups', 'Lat Pulldown', 'Bent Over Row', 'Deadlift', 'Face Pulls'],
+    'Legs': ['Squats', 'Leg Press', 'Lunges', 'Leg Extension', 'Hamstring Curls'],
+    'Shoulders': ['Overhead Press', 'Lateral Raise', 'Front Raise', 'Shrugs'],
+    'Arms': ['Bicep Curls', 'Hammer Curls', 'Tricep Extension', 'Skull Crushers', 'Dips'],
+    'Core': ['Crunches', 'Plank', 'Leg Raise', 'Russian Twist'],
+    'Cardio': ['Running', 'Cycling', 'Burpees', 'Jump Rope']
+};
+
 const WorkoutPlanManagement = () => {
     const [plans, setPlans] = useState([]);
     const [members, setMembers] = useState([]);
@@ -19,10 +29,10 @@ const WorkoutPlanManagement = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [equipmentList, setEquipmentList] = useState([]);
     const [newPlan, setNewPlan] = useState({
-        planName: '', 
-        exercises: [{ name: '', equipmentId: '', setsReps: '' }], // Changed to structured array
-        difficulty: 'BEGINNER', 
-        goal: '', 
+        planName: '',
+        exercises: [{ name: '', equipmentId: '', sets: '3', reps: '12', isManual: false, tempName: '' }],
+        difficulty: 'BEGINNER',
+        goal: '',
         memberId: ''
     });
     const [selectedMember, setSelectedMember] = useState('ALL');
@@ -87,7 +97,7 @@ const WorkoutPlanManagement = () => {
             if (currentUser.role === 'MEMBER') {
                 url = `http://localhost:8080/api/workout-plans/member/${currentUser.id}`;
             } else if (currentUser.role === 'TRAINER') {
-                url = selectedMember === 'ALL' 
+                url = selectedMember === 'ALL'
                     ? `http://localhost:8080/api/workout-plans/trainer/${currentUser.id}`
                     : `http://localhost:8080/api/workout-plans/member/${selectedMember}`;
             } else {
@@ -103,7 +113,7 @@ const WorkoutPlanManagement = () => {
                     const perfUrl = currentUser.role === 'MEMBER'
                         ? `http://localhost:8080/api/workout-plans/weekly-summary?planId=${plan.id}`
                         : `http://localhost:8080/api/workout-plans/member/${plan.memberId}/performance?planId=${plan.id}`;
-                    
+
                     const perfRes = await axios.get(perfUrl, { headers: { Authorization: auth } });
                     return { ...plan, performance: perfRes.data };
                 } catch (e) {
@@ -124,38 +134,58 @@ const WorkoutPlanManagement = () => {
     const handleCreatePlan = async (e) => {
         e.preventDefault();
 
-        // Validation: Plan Name cannot be only numbers
-        if (/^\d+$/.test(newPlan.planName.trim())) {
-            alert("Plan Name cannot be only numbers. Please provide a descriptive title (e.g. 'Strength Phase 01').");
+        const planNameTrimmed = newPlan.planName.trim();
+
+        // Validation: Plan Name
+        if (/^\d+$/.test(planNameTrimmed)) {
+            alert("Plan Name cannot be only numbers. Please provide a descriptive title.");
+            return;
+        }
+        if (planNameTrimmed.length < 3) {
+            alert("Plan Name must be at least 3 characters long.");
             return;
         }
 
         // Validation: Exercises
+        const exerciseNames = new Set();
+        const formattedExercises = [];
+
         for (let i = 0; i < newPlan.exercises.length; i++) {
             const ex = newPlan.exercises[i];
-            if (/^\d+$/.test(ex.name.trim())) {
+            const finalName = ex.isManual ? ex.tempName.trim() : ex.name;
+
+            if (!finalName) {
+                alert(`Exercise #${i + 1} needs a name.`);
+                return;
+            }
+            if (ex.isManual && /^\d+$/.test(finalName)) {
                 alert(`Exercise #${i + 1} name cannot be only numbers.`);
                 return;
             }
-            if (!ex.setsReps.trim()) {
-                alert(`Exercise #${i + 1} requires Sets/Reps information.`);
+            if (finalName.length < 3) {
+                alert(`Exercise #${i + 1} name must be at least 3 characters long.`);
                 return;
             }
-        }
 
-        // Filter out empty exercises and format equipment
-        const formattedExercises = newPlan.exercises.filter(ex => ex.name.trim() !== '').map(ex => {
+            // Duplicate Detection
+            const lowerName = finalName.toLowerCase();
+            if (exerciseNames.has(lowerName)) {
+                alert(`Duplicate detected: Exercise '${finalName}' is already added.`);
+                return;
+            }
+            exerciseNames.add(lowerName);
+
             const equipment = equipmentList.find(e => e.id.toString() === ex.equipmentId.toString());
-            return {
-                name: ex.name,
+            formattedExercises.push({
+                name: finalName,
                 equipmentId: ex.equipmentId,
                 equipmentName: equipment ? equipment.name : 'No Equipment',
-                setsReps: ex.setsReps
-            };
-        });
+                setsReps: `${ex.sets} x ${ex.reps}`
+            });
+        }
 
         if (formattedExercises.length === 0) {
-            alert("Please add at least one exercise to the plan.");
+            alert("Please add at least one exercise.");
             return;
         }
 
@@ -163,18 +193,18 @@ const WorkoutPlanManagement = () => {
             const auth = JSON.parse(localStorage.getItem('auth'));
             await axios.post('http://localhost:8080/api/workout-plans', {
                 ...newPlan,
-                exercises: JSON.stringify(formattedExercises), // Save as JSON string
+                exercises: JSON.stringify(formattedExercises),
                 member: { id: newPlan.memberId }
             }, {
                 headers: { Authorization: auth }
             });
             setShowCreateModal(false);
-            setNewPlan({ 
-                planName: '', 
-                exercises: [{ name: '', equipmentId: '', setsReps: '' }], 
-                difficulty: 'BEGINNER', 
-                goal: '', 
-                memberId: '' 
+            setNewPlan({
+                planName: '',
+                exercises: [{ name: '', equipmentId: '', sets: '3', reps: '12', isManual: false, tempName: '' }],
+                difficulty: 'BEGINNER',
+                goal: '',
+                memberId: ''
             });
             fetchPlans(user);
         } catch (err) {
@@ -186,7 +216,7 @@ const WorkoutPlanManagement = () => {
     const addExerciseRow = () => {
         setNewPlan(prev => ({
             ...prev,
-            exercises: [...prev.exercises, { name: '', equipmentId: '', setsReps: '' }]
+            exercises: [...prev.exercises, { name: '', equipmentId: '', sets: '3', reps: '12', isManual: false, tempName: '' }]
         }));
     };
 
@@ -224,8 +254,21 @@ const WorkoutPlanManagement = () => {
         }
     };
 
+    const deactivatePlan = async (id) => {
+        if (!window.confirm("Are you sure you want to stop this training protocol? It will be moved to the athlete's archive.")) return;
+        try {
+            const auth = JSON.parse(localStorage.getItem('auth'));
+            await axios.post(`http://localhost:8080/api/workout-plans/${id}/deactivate`, {}, {
+                headers: { Authorization: auth }
+            });
+            fetchPlans(user);
+        } catch (err) {
+            alert("Deactivation failed.");
+        }
+    };
+
     const deletePlan = async (id) => {
-        if (!window.confirm("Delete this plan?")) return;
+        if (!window.confirm("Permanently purge this training regime from the system?")) return;
         try {
             const auth = JSON.parse(localStorage.getItem('auth'));
             await axios.delete(`http://localhost:8080/api/workout-plans/${id}`, {
@@ -266,7 +309,7 @@ const WorkoutPlanManagement = () => {
                                 <AdminHeader title="Workout Plans" subtitle="Monitor and manage all system workout routines." lightTheme={true} />
                             )}
 
-                            {!isMember && (
+                            {isTrainer && (
                                 <div className="mt-8 flex justify-between items-end">
                                     <div>
                                         <div className="flex items-center gap-2 mb-2 text-emerald-400">
@@ -368,9 +411,12 @@ const WorkoutPlanManagement = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        {user?.role !== 'MEMBER' && (
-                                            <button onClick={() => deletePlan(plan.id)} className="p-2 text-slate-600 hover:text-red-500 transition-colors">
-                                                <Trash2 size={18} />
+                                        {user?.role === 'TRAINER' && plan.status === 'CURRENT' && (
+                                            <button 
+                                                onClick={() => deactivatePlan(plan.id)} 
+                                                className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-sm border border-red-100"
+                                            >
+                                                <X size={14} /> Stop Routine
                                             </button>
                                         )}
                                     </div>
@@ -397,14 +443,14 @@ const WorkoutPlanManagement = () => {
                                                 return <p className={`${isPremium ? 'text-slate-600' : 'text-slate-400'} text-sm leading-relaxed whitespace-pre-line mb-4`}>{plan.exercises}</p>;
                                             })()}
                                         </div>
-                                        
+
                                         <div className="pt-4 border-t border-white/10 space-y-2">
                                             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-blue-400">
                                                 <span>Protocol Consistency</span>
                                                 <span>{plan.performance?.consistencyPercentage?.toFixed(0) || 0}%</span>
                                             </div>
                                             <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                                <motion.div 
+                                                <motion.div
                                                     initial={{ width: 0 }}
                                                     animate={{ width: `${plan.performance?.consistencyPercentage || 0}%` }}
                                                     className="h-full bg-blue-500 rounded-full"
@@ -444,7 +490,7 @@ const WorkoutPlanManagement = () => {
 
                 </div>
 
-                {/* Trainer Only: AI Generation Quick Select */}
+                {/* Trainer Only: AI Generation Quick Select
                 {user?.role === 'TRAINER' && (
                     <div className="mt-12 bg-blue-600 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden">
                         <div className="relative z-10">
@@ -471,7 +517,7 @@ const WorkoutPlanManagement = () => {
                         </div>
                         <BrainCircuit className="absolute right-[-5%] bottom-[-10%] w-64 h-64 text-white/10" />
                     </div>
-                )}
+                )} */}
 
                 {/* Manual Plan Modal */}
                 <AnimatePresence>
@@ -533,7 +579,7 @@ const WorkoutPlanManagement = () => {
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center mb-2">
                                             <label className="text-xs font-black uppercase text-slate-500">Exercise Sequence</label>
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={addExerciseRow}
                                                 className="bg-blue-600/10 text-blue-400 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all flex items-center gap-2"
@@ -541,12 +587,12 @@ const WorkoutPlanManagement = () => {
                                                 <Plus size={12} /> Add Exercise
                                             </button>
                                         </div>
-                                        
+
                                         <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
                                             {newPlan.exercises.map((ex, index) => (
                                                 <div key={index} className="bg-slate-900/50 p-6 rounded-3xl border border-white/5 space-y-4 relative group">
                                                     {newPlan.exercises.length > 1 && (
-                                                        <button 
+                                                        <button
                                                             type="button"
                                                             onClick={() => removeExerciseRow(index)}
                                                             className="absolute right-4 top-4 text-slate-600 hover:text-red-500 transition-colors"
@@ -554,34 +600,77 @@ const WorkoutPlanManagement = () => {
                                                             <Trash2 size={16} />
                                                         </button>
                                                     )}
-                                                    
+
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                                                         <div className="space-y-1">
-                                                            <label className="text-[10px] font-bold text-slate-500 uppercase">Exercise Name</label>
-                                                            <input
-                                                                type="text"
-                                                                placeholder="e.g. Chest Press"
-                                                                className="w-full bg-slate-800 p-3 rounded-xl border border-white/5 text-sm text-white outline-none focus:border-blue-500"
-                                                                value={ex.name}
-                                                                onChange={e => updateExercise(index, 'name', e.target.value)}
-                                                                required
-                                                            />
+                                                            <label className="text-[10px] font-bold text-slate-500 uppercase">Exercise Selection</label>
+                                                            {ex.isManual ? (
+                                                                <div className="flex gap-2">
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="Manual Exercise Name"
+                                                                        className="w-full bg-slate-800 p-3 rounded-xl border border-blue-500/50 text-sm text-white outline-none"
+                                                                        value={ex.tempName}
+                                                                        onChange={e => updateExercise(index, 'tempName', e.target.value)}
+                                                                        autoFocus
+                                                                    />
+                                                                    <button 
+                                                                        type="button" 
+                                                                        onClick={() => updateExercise(index, 'isManual', false)}
+                                                                        className="text-[10px] bg-slate-700 px-2 rounded-lg text-slate-300"
+                                                                    >Back</button>
+                                                                </div>
+                                                            ) : (
+                                                                <select
+                                                                    className="w-full bg-slate-800 p-3 rounded-xl border border-white/5 text-sm text-white outline-none focus:border-blue-500"
+                                                                    value={ex.name}
+                                                                    onChange={e => {
+                                                                        if (e.target.value === 'OTHER') {
+                                                                            updateExercise(index, 'isManual', true);
+                                                                        } else {
+                                                                            updateExercise(index, 'name', e.target.value);
+                                                                        }
+                                                                    }}
+                                                                    required
+                                                                >
+                                                                    <option value="">Select Exercise</option>
+                                                                    {Object.keys(EXERCISE_LIBRARY).map(cat => (
+                                                                        <optgroup key={cat} label={cat}>
+                                                                            {EXERCISE_LIBRARY[cat].map(name => (
+                                                                                <option key={name} value={name}>{name}</option>
+                                                                            ))}
+                                                                        </optgroup>
+                                                                    ))}
+                                                                    <option value="OTHER">✍️ Other (Type Manually)</option>
+                                                                </select>
+                                                            )}
                                                         </div>
-                                                        <div className="space-y-1">
-                                                            <label className="text-[10px] font-bold text-slate-500 uppercase">Sets / Reps</label>
-                                                            <input
-                                                                type="text"
-                                                                placeholder="e.g. 3 x 12"
-                                                                className="w-full bg-slate-800 p-3 rounded-xl border border-white/5 text-sm text-white outline-none focus:border-blue-500"
-                                                                value={ex.setsReps}
-                                                                onChange={e => updateExercise(index, 'setsReps', e.target.value)}
-                                                                required
-                                                            />
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <div className="space-y-1">
+                                                                <label className="text-[10px] font-bold text-slate-500 uppercase">Sets</label>
+                                                                <select
+                                                                    className="w-full bg-slate-800 p-3 rounded-xl border border-white/5 text-sm text-white outline-none focus:border-blue-500"
+                                                                    value={ex.sets}
+                                                                    onChange={e => updateExercise(index, 'sets', e.target.value)}
+                                                                >
+                                                                    {[1,2,3,4,5,6,8,10].map(s => <option key={s} value={s}>{s} Sets</option>)}
+                                                                </select>
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <label className="text-[10px] font-bold text-slate-500 uppercase">Reps</label>
+                                                                <select
+                                                                    className="w-full bg-slate-800 p-3 rounded-xl border border-white/5 text-sm text-white outline-none focus:border-blue-500"
+                                                                    value={ex.reps}
+                                                                    onChange={e => updateExercise(index, 'reps', e.target.value)}
+                                                                >
+                                                                    {[5,8,10,12,15,20,25,30,50].map(r => <option key={r} value={r}>{r} Reps</option>)}
+                                                                </select>
+                                                            </div>
                                                         </div>
                                                     </div>
 
                                                     <div className="space-y-1">
-                                                        <label className="text-[10px] font-bold text-slate-500 uppercase">Equipment Selection</label>
+                                                        <label className="text-[10px] font-bold text-slate-500 uppercase">Target Equipment</label>
                                                         <select
                                                             className="w-full bg-slate-800 p-3 rounded-xl border border-white/5 text-sm text-white outline-none focus:border-blue-500"
                                                             value={ex.equipmentId}
