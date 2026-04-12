@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, User, LogOut, Settings, Zap } from 'lucide-react';
+import { Bell, User, LogOut, Settings, Zap, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 const MemberHeader = ({ title, subtitle = "Have a productive workout today!", lightTheme = false }) => {
     const [notifications, setNotifications] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [selectedNotification, setSelectedNotification] = useState(null);
     const [profile, setProfile] = useState(null);
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
@@ -106,7 +107,11 @@ const MemberHeader = ({ title, subtitle = "Have a productive workout today!", li
                                         notifications.map((n, i) => (
                                             <div
                                                 key={i}
-                                                onClick={() => !n.read && handleReadOne(n.id)}
+                                                onClick={() => {
+                                                    setSelectedNotification(n);
+                                                    if (!n.read) handleReadOne(n.id);
+                                                    setShowNotifications(false);
+                                                }}
                                                 className={`flex gap-4 p-4 rounded-2xl transition-colors border border-transparent cursor-pointer group ${n.read ? 'bg-slate-50 opacity-60' : 'bg-blue-50/50 hover:border-blue-100'
                                                     }`}
                                             >
@@ -141,7 +146,58 @@ const MemberHeader = ({ title, subtitle = "Have a productive workout today!", li
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </div>
+                <AnimatePresence>
+                    {selectedNotification && (
+                        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-xl">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                className="bg-white w-full max-w-lg rounded-[3.5rem] p-12 relative shadow-2xl border border-white/20"
+                            >
+                                <button 
+                                    onClick={() => setSelectedNotification(null)} 
+                                    className="absolute right-10 top-10 text-slate-400 hover:text-slate-900 transition-colors p-3 bg-slate-50 rounded-full hover:rotate-90 transition-all duration-300"
+                                >
+                                    <X size={24} />
+                                </button>
+                                
+                                <div className="flex items-center gap-6 mb-10">
+                                    <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-blue-500/40">
+                                        <Zap size={40} />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-3xl font-black text-slate-900 leading-tight">Advisory Detail</h2>
+                                        <p className="text-blue-600 font-black uppercase text-[10px] tracking-[0.2em] mt-2">Personal Training Insight</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-8">
+                                    <div className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100">
+                                        <h3 className="text-xl font-black text-slate-900 mb-4 leading-snug">{selectedNotification.title}</h3>
+                                        <p className="text-slate-600 font-bold text-base leading-[1.8] whitespace-pre-wrap italic">
+                                            "{selectedNotification.message}"
+                                        </p>
+                                    </div>
+                                    
+                                    <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Dispatched On</span>
+                                            <span className="text-sm font-black text-slate-900">{new Date(selectedNotification.createdAt).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}</span>
+                                        </div>
+                                        <button 
+                                            onClick={() => setSelectedNotification(null)} 
+                                            className="w-full sm:w-auto bg-slate-900 text-white px-10 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-xl shadow-slate-900/10 active:scale-95"
+                                        >
+                                            Dismiss Signal
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+            </div>
 
                 {/* User Profile Summary */}
                 <div className="flex items-center gap-3 bg-white p-1 pr-4 rounded-xl border border-slate-100 shadow-sm hover:border-blue-200 transition-all cursor-pointer group">

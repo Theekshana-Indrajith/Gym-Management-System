@@ -11,6 +11,7 @@ import com.musclehub.backend.repository.TrainerSessionRepository;
 import com.musclehub.backend.entity.Inquiry;
 import com.musclehub.backend.repository.InquiryRepository;
 import com.musclehub.backend.entity.Equipment;
+import com.musclehub.backend.entity.TrainerSlot;
 import com.musclehub.backend.repository.EquipmentRepository;
 import com.musclehub.backend.dto.*;
 import org.springframework.transaction.annotation.Transactional;
@@ -227,12 +228,13 @@ public class MemberService {
             throw new RuntimeException("Slot is full");
         }
 
-        // Prevent double booking
-        boolean alreadyBooked = trainerSessionRepository.findAllByMember(member).stream()
-                .anyMatch(s -> s.getSlot() != null && s.getSlot().getId().equals(slotId));
-
-        if (alreadyBooked) {
-            throw new RuntimeException("You have already booked this slot");
+        // Protocol Check: Enforcement of "One Session Per Student Per Day" policy
+        java.time.LocalDateTime startOfDay = slot.getStartTime().toLocalDate().atStartOfDay();
+        java.time.LocalDateTime endOfDay = slot.getStartTime().toLocalDate().atTime(23, 59, 59);
+        
+        List<TrainerSession> existingOnDay = trainerSessionRepository.findMemberSessionsOnDay(member, startOfDay, endOfDay);
+        if (!existingOnDay.isEmpty()) {
+            throw new RuntimeException("Operational Protocol: You already have a session confirmed for this date (" + slot.getStartTime().toLocalDate() + "). Members are permitted only one session per day for health and safety reasons.");
         }
 
         TrainerSession session = new TrainerSession();
@@ -272,9 +274,9 @@ public class MemberService {
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         java.time.LocalDateTime sessionTime = session.getSessionTime();
 
-        // 10 hour rule
-        if (now.plusHours(10).isAfter(sessionTime)) {
-            throw new RuntimeException("Cancellations must be made at least 10 hours before the session start time.");
+        // 2 hour rule
+        if (now.plusHours(2).isAfter(sessionTime)) {
+            throw new RuntimeException("Cancellations must be made at least 2 hours before the session start time.");
         }
 
         // Update Slot
