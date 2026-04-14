@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,6 +22,72 @@ public class AdminService {
     private final InquiryRepository inquiryRepository;
     private final MaintenanceLogRepository maintenanceLogRepository;
     private final NotificationRepository notificationRepository;
+    private final MailService mailService;
+    private final WorkoutPlanRepository workoutPlanRepository;
+    private final WorkoutLogRepository workoutLogRepository;
+    private final WorkoutAssignmentRepository workoutAssignmentRepository;
+    private final MealPlanRepository mealPlanRepository;
+    private final SupplementOrderRepository supplementOrderRepository;
+    private final MembershipRequestRepository membershipRequestRepository;
+    private final ProgressLogRepository progressLogRepository;
+    private final TrainerSlotRepository trainerSlotRepository;
+    private final TrainerSessionRepository trainerSessionRepository;
+    private final AttendanceRepository attendanceRepository;
+
+    public List<Map<String, Object>> getAdminAlerts() {
+        List<Map<String, Object>> alerts = new ArrayList<>();
+
+        // Pending Supplement Orders
+        long pendingOrders = supplementOrderRepository.findByStatus(SupplementOrder.OrderStatus.PENDING).size() 
+                           + supplementOrderRepository.findByStatus(SupplementOrder.OrderStatus.AWAITING_PAYMENT_APPROVAL).size();
+        if (pendingOrders > 0) {
+            alerts.add(Map.of(
+                "title", pendingOrders + " Pending Orders",
+                "message", "There are supplement orders waiting to be processed.",
+                "type", "ORDER",
+                "link", "/admin/supplements",
+                "count", pendingOrders
+            ));
+        }
+
+        // Open Inquiries
+        long openInquiries = inquiryRepository.findByStatus(Inquiry.Status.OPEN).size();
+        if (openInquiries > 0) {
+            alerts.add(Map.of(
+                "title", openInquiries + " Open Inquiries",
+                "message", "Members are waiting for a response to their inquiries.",
+                "type", "INQUIRY",
+                "link", "/admin/inquiries",
+                "count", openInquiries
+            ));
+        }
+
+        // Pending Membership Requests
+        long pendingMemberships = membershipRequestRepository.findAllByStatus(MembershipRequest.Status.PENDING).size();
+        if (pendingMemberships > 0) {
+            alerts.add(Map.of(
+                "title", pendingMemberships + " Membership Requests",
+                "message", "New users have requested membership access.",
+                "type", "MEMBERSHIP",
+                "link", "/admin/members",
+                "count", pendingMemberships
+            ));
+        }
+
+        // Broken Equipment
+        long brokenEquipment = equipmentRepository.findByStatus(Equipment.Status.BROKEN).size();
+        if (brokenEquipment > 0) {
+            alerts.add(Map.of(
+                "title", brokenEquipment + " Broken Equipment",
+                "message", "Some equipment have been reported broken.",
+                "type", "EQUIPMENT",
+                "link", "/admin/equipment",
+                "count", brokenEquipment
+            ));
+        }
+
+        return alerts;
+    }
 
     public List<UserDTO> getAllUsersByRole(User.Role role) {
         return userRepository.findAllByRole(role).stream()
@@ -34,9 +102,53 @@ public class AdminService {
         return new DashboardStats(admins, trainers, members);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void deleteUser(Long id) {
-        if (id == null)
-            return;
+        if (id == null) return;
+        
+        User user = userRepository.findById(id).orElse(null);
+        if (user == null) return;
+
+        // 1. Cleanup References where user is a TRAINER for others
+        userRepository.findAllByTrainer(user).forEach(member -> {
+            member.setTrainer(null);
+            userRepository.save(member);
+        });
+
+        // 2. Nullify references that should be preserved for history
+        maintenanceLogRepository.nullifyReportedBy(id);
+        maintenanceLogRepository.nullifyTechnician(id);
+        inquiryRepository.deleteByAssignedToId(id);
+
+        // 3. Cleanup Module Data (Delete user-specific records)
+        notificationRepository.deleteByUserId(id);
+        inquiryRepository.deleteByUserId(id);
+        progressLogRepository.deleteByUserId(id);
+        attendanceRepository.deleteByUserId(id);
+        membershipRequestRepository.deleteByUserId(id);
+        
+        // Workout related
+        workoutLogRepository.deleteByUserId(id);
+        workoutAssignmentRepository.deleteByMemberId(id);
+        workoutAssignmentRepository.deleteByTrainerId(id);
+        workoutPlanRepository.deleteByMemberId(id);
+        workoutPlanRepository.deleteByTrainerId(id);
+        
+        // Meal plans
+        mealPlanRepository.deleteByMemberId(id);
+        mealPlanRepository.deleteByTrainerId(id);
+        
+        // Supplements
+        supplementOrderRepository.deleteByUserId(id);
+
+        // Trainer specific
+        if (user.getRole() == User.Role.TRAINER) {
+            trainerSlotRepository.deleteByTrainerId(id);
+            trainerSessionRepository.deleteByTrainerId(id);
+        }
+        trainerSessionRepository.deleteByMemberId(id);
+
+        // 4. Final Deletion
         userRepository.deleteById(id);
     }
 
@@ -52,6 +164,14 @@ public class AdminService {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Username is already taken!");
         }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email is already in use!");
+        }
+
+        if (request.getPassword() == null || request.getPassword().trim().length() < 6) {
+            throw new RuntimeException("Password must be at least 6 characters long.");
+        }
+
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
@@ -78,6 +198,12 @@ public class AdminService {
     public Equipment addEquipment(Equipment equipment) {
         if (equipment == null)
             throw new RuntimeException("Equipment data is null");
+        if (equipment.getCost() == null || equipment.getCost() < 0) {
+            throw new RuntimeException("Equipment cost cannot be negative");
+        }
+        if (equipment.getName() == null || equipment.getName().trim().isEmpty()) {
+            throw new RuntimeException("Equipment name is required");
+        }
         return equipmentRepository.save(equipment);
     }
 
@@ -86,6 +212,10 @@ public class AdminService {
             throw new RuntimeException("ID is null");
         Equipment existing = equipmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Equipment not found"));
+
+        if (data.getCost() != null && data.getCost() < 0) {
+            throw new RuntimeException("Equipment cost cannot be negative");
+        }
 
         existing.setName(data.getName());
         existing.setBrand(data.getBrand());
@@ -99,6 +229,7 @@ public class AdminService {
         // Alternative Recommendation Sync
         existing.setAlternativeId(data.getAlternativeId());
         existing.setAlternativeName(data.getAlternativeName());
+        existing.setFallbackExercise(data.getFallbackExercise());
 
         return equipmentRepository.save(existing);
     }
@@ -121,6 +252,11 @@ public class AdminService {
     public void resolveEquipment(Long equipmentId, String adminUsername, String action, String notes, Double cost) {
         if (equipmentId == null)
             throw new RuntimeException("ID is null");
+        
+        if (cost == null || cost <= 0) {
+            throw new RuntimeException("Repair cost must be greater than 0");
+        }
+        
         Equipment existing = equipmentRepository.findById(equipmentId)
                 .orElseThrow(() -> new RuntimeException("Equipment not found"));
         User admin = userRepository.findByUsername(adminUsername)
@@ -183,8 +319,10 @@ public class AdminService {
     }
 
     // Feedback Management
-    public List<Inquiry> getAllInquiries() {
-        return inquiryRepository.findAll();
+    public List<InquiryDTO> getAllInquiries() {
+        return inquiryRepository.findAll().stream()
+                .map(InquiryDTO::new)
+                .collect(Collectors.toList());
     }
 
     public void replyToInquiry(Long id, String reply) {
@@ -193,6 +331,40 @@ public class AdminService {
         Inquiry inquiry = inquiryRepository.findById(id).orElseThrow(() -> new RuntimeException("Inquiry not found"));
         inquiry.setReply(reply);
         inquiry.setStatus(Inquiry.Status.CLOSED);
+        inquiry.setRepliedAt(java.time.LocalDateTime.now());
         inquiryRepository.save(inquiry);
+
+        // Notify member via Notification System if it's a registered user
+        if (inquiry.getUser() != null) {
+            Notification notification = new Notification();
+            notification.setUser(inquiry.getUser());
+            notification.setTitle("Response: " + inquiry.getSubject());
+            notification.setMessage("Admin has replied: " + reply);
+            notification.setType("INQUIRY_REPLY");
+            notification.setCreatedAt(java.time.LocalDateTime.now());
+            notification.setRead(false);
+            notificationRepository.save(notification);
+        }
+
+        // Send Email
+        String targetEmail = inquiry.getSenderEmail();
+        if (targetEmail == null && inquiry.getUser() != null) {
+            targetEmail = inquiry.getUser().getEmail();
+        }
+
+        if (targetEmail != null) {
+            try {
+                mailService.sendEmail(
+                    targetEmail, 
+                    "RE: " + inquiry.getSubject() + " - MuscleHub Support",
+                    "Hello " + (inquiry.getSenderName() != null ? inquiry.getSenderName() : "Member") + ",\n\n" +
+                    "Our management team has responded to your inquiry:\n\n" +
+                    "\"" + reply + "\"\n\n" +
+                    "Best regards,\nMuscleHub Team"
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to send email: " + e.getMessage());
+            }
+        }
     }
 }

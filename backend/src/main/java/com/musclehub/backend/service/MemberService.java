@@ -11,7 +11,6 @@ import com.musclehub.backend.repository.TrainerSessionRepository;
 import com.musclehub.backend.entity.Inquiry;
 import com.musclehub.backend.repository.InquiryRepository;
 import com.musclehub.backend.entity.Equipment;
-import com.musclehub.backend.entity.TrainerSlot;
 import com.musclehub.backend.repository.EquipmentRepository;
 import com.musclehub.backend.dto.*;
 import org.springframework.transaction.annotation.Transactional;
@@ -274,9 +273,9 @@ public class MemberService {
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         java.time.LocalDateTime sessionTime = session.getSessionTime();
 
-        // 2 hour rule
-        if (now.plusHours(2).isAfter(sessionTime)) {
-            throw new RuntimeException("Cancellations must be made at least 2 hours before the session start time.");
+        // 10 hour rule
+        if (now.plusHours(10).isAfter(sessionTime)) {
+            throw new RuntimeException("Cancellations must be made at least 10 hours before the session start time.");
         }
 
         // Update Slot

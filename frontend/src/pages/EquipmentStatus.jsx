@@ -40,9 +40,15 @@ const EquipmentStatus = () => {
     const handleReportSubmit = async (e) => {
         e.preventDefault();
         
+        const description = reportForm.description.trim();
+        if (description.length < 5) {
+            alert("Validation Error: Please provide a descriptive message with at least 5 characters.");
+            return;
+        }
+
         // Validation: Description cannot be only numbers
-        if (/^\d+$/.test(reportForm.description.trim())) {
-            alert("Please provide a meaningful description of the issue. Numbers only are not allowed.");
+        if (/^\d+$/.test(description)) {
+            alert("Validation Error: The description cannot consist only of numbers. Please provide a meaningful context for the technical team.");
             return;
         }
 

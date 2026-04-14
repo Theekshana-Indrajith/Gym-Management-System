@@ -43,7 +43,7 @@ const MyProfile = () => {
         biceps: '',
         thighs: '',
         healthDetails: '',
-        dietaryPreference: '',
+        dietaryPreference: 'NON_VEG',
         excludedMeatTypes: ''
     });
     const [activeTab, setActiveTab] = useState('basic');
@@ -101,28 +101,7 @@ const MyProfile = () => {
         e.preventDefault();
         setMessage('');
 
-        // Required Fields Validation
-        if (!formData.firstName || !formData.firstName.trim()) {
-            alert("First Name is required.");
-            return;
-        }
-        if (!formData.lastName || !formData.lastName.trim()) {
-            alert("Last Name is required.");
-            return;
-        }
-        if (!formData.phoneNumber || !formData.phoneNumber.trim()) {
-            alert("Phone Number is required.");
-            return;
-        }
-        if (!formData.gender) {
-            alert("Gender is required.");
-            return;
-        }
-        if (!formData.dietaryPreference) {
-            alert("Dietary Preference is required.");
-            return;
-        }
-
+        // Validation
         const nameRegex = /^[a-zA-Z\s.-]+$/;
         if (formData.firstName && !nameRegex.test(formData.firstName)) {
             alert("First name cannot contain numbers.");
@@ -365,7 +344,6 @@ const MyProfile = () => {
                                             onChange={handleChange}
                                             className="w-full px-6 py-4 rounded-3xl border border-slate-200 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all bg-white text-slate-900 font-bold appearance-none"
                                         >
-                                            <option value="" disabled>Select Preference</option>
                                             <option value="NON_VEG">Non-Vegetarian</option>
                                             <option value="VEGETARIAN">Vegetarian (Veg)</option>
                                             <option value="VEGAN">Vegan (Plant Based)</option>

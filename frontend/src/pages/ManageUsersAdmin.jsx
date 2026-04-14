@@ -135,10 +135,10 @@ const ManageUsersAdmin = () => {
                             <h3 className="text-2xl font-black mb-8">Member Information</h3>
                             <form onSubmit={handleAdd} className="space-y-6">
                                 <div className="grid grid-cols-2 gap-6">
-                                    <input type="text" placeholder="Username" className="p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 font-bold" required value={formData.username} onChange={e => setFormData({ ...formData, username: e.target.value })} autoComplete="off" />
-                                    <input type="email" placeholder="Email Address" className="p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 font-bold" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} autoComplete="off" />
+                                    <input type="text" placeholder="Username" className="p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 font-bold" required value={formData.username} onChange={e => setFormData({ ...formData, username: e.target.value })} />
+                                    <input type="email" placeholder="Email Address" className="p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 font-bold" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
                                 </div>
-                                <input type="password" placeholder="Initial Password" className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 font-bold" required value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} autoComplete="new-password" />
+                                <input type="password" placeholder="Initial Password" className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 font-bold" required value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
                                 <button className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg shadow-xl hover:bg-black transition-all">Enable Membership</button>
                             </form>
                         </motion.div>

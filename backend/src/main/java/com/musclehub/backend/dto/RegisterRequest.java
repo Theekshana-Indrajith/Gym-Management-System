@@ -14,5 +14,4 @@ public class RegisterRequest {
     private Integer age;
     private String gender;
     private String phoneNumber;
-    private String verificationCode;
 }

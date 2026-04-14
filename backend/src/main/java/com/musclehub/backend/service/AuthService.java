@@ -16,7 +16,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Random;
 import java.util.UUID;
 
 @Service
@@ -28,27 +27,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JavaMailSender mailSender;
-
-    public void sendVerificationOtp(String email) {
-        if (userRepository.existsByEmail(email)) {
-            throw new RuntimeException("Email is already registered!");
-        }
-
-        String otp = String.format("%06d", new Random().nextInt(999999));
-        EmailVerification verification = new EmailVerification();
-        verification.setEmail(email);
-        verification.setOtp(otp);
-        verification.setExpiryTime(LocalDateTime.now().plusMinutes(10)); // valid for 10 mins
-        verificationRepository.save(verification);
-
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("musclehubhelp@gmail.com");
-        message.setTo(email);
-        message.setSubject("MuscleHub - Registration Verification");
-        message.setText("Welcome to MuscleHub!\n\nYour verification code is: " + otp + 
-                        "\n\nPlease use this code to complete your registration. This code will expire in 10 minutes.\n\nBest regards,\nMuscleHub Team");
-        mailSender.send(message);
-    }
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -83,6 +61,7 @@ public class AuthService {
         user.setAge(request.getAge());
         user.setGender(request.getGender());
         user.setPhoneNumber(request.getPhoneNumber());
+        // Force role to MEMBER for public registration
         user.setRole(User.Role.MEMBER);
 
         userRepository.save(user);
@@ -137,8 +116,9 @@ public class AuthService {
         user.setTokenExpiry(LocalDateTime.now().plusHours(1));
         userRepository.save(user);
 
+        // Send actual email
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("musclehubhelp@gmail.com");
+        message.setFrom("cinemascopehelp@gmail.com");
         message.setTo(email);
         message.setSubject("MuscleHub - Password Reset Token");
         message.setText("Hello,\n\nYour password reset token is: " + token + 
@@ -146,6 +126,8 @@ public class AuthService {
                         "This token will expire in 1 hour.\n\nBest regards,\nMuscleHub Team");
         
         mailSender.send(message);
+
+        System.out.println(">>> Password reset token sent to " + email);
     }
 
     public void resetPassword(String token, String newPassword) {
@@ -154,10 +136,6 @@ public class AuthService {
 
         if (user.getTokenExpiry().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Token has expired");
-        }
-
-        if (newPassword == null || newPassword.trim().length() < 6) {
-            throw new RuntimeException("New password must be at least 6 characters long.");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));

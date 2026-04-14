@@ -27,11 +27,6 @@ public class MembershipMemberController {
         return ResponseEntity.ok(membershipService.getActivePackages());
     }
 
-    @GetMapping("/public/packages")
-    public ResponseEntity<List<MembershipPackage>> getPublicPackages() {
-        return ResponseEntity.ok(membershipService.getActivePackages());
-    }
-
     @PostMapping(value = "/subscribe", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MembershipRequest> subscribe(
             Authentication authentication,
