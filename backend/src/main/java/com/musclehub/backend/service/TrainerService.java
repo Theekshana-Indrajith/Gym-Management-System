@@ -601,3 +601,5 @@ public class TrainerService {
         }
     }
 }
+/ /   R e f i n e d   s t a t u s   t r a c k i n g   l o g i c   f o r   m e m b e r   p r o g r e s s  
+ 
