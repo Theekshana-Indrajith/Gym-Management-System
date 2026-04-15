@@ -6,5 +6,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface EquipmentRepository extends JpaRepository<Equipment, Long> {
-    java.util.List<Equipment> findByStatus(Equipment.Status status);
 }

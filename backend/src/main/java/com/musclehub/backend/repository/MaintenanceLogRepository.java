@@ -17,14 +17,4 @@ public interface MaintenanceLogRepository extends JpaRepository<MaintenanceLog, 
 
     @Query("SELECT m FROM MaintenanceLog m WHERE m.equipment.id = :equipmentId AND m.status = :status ORDER BY m.logDate DESC")
     java.util.List<MaintenanceLog> findRecentByEquipmentAndStatus(@Param("equipmentId") Long equipmentId, @Param("status") MaintenanceLog.LogStatus status);
-
-    @org.springframework.data.jpa.repository.Modifying
-    @org.springframework.transaction.annotation.Transactional
-    @org.springframework.data.jpa.repository.Query("UPDATE MaintenanceLog m SET m.reportedBy = null WHERE m.reportedBy.id = :id")
-    void nullifyReportedBy(Long id);
-
-    @org.springframework.data.jpa.repository.Modifying
-    @org.springframework.transaction.annotation.Transactional
-    @org.springframework.data.jpa.repository.Query("UPDATE MaintenanceLog m SET m.technician = null WHERE m.technician.id = :id")
-    void nullifyTechnician(Long id);
 }

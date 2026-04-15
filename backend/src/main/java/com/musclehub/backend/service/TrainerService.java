@@ -13,6 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,14 +31,72 @@ public class TrainerService {
         private final TrainerSlotRepository trainerSlotRepository;
         private final MaintenanceLogRepository maintenanceLogRepository;
         private final ProgressLogRepository progressLogRepository;
+        private final NotificationRepository notificationRepository;
+        private final EmailService emailService;
 
         public List<UserDTO> getMyMembers(String trainerUsername) {
                 User trainer = userRepository.findByUsername(trainerUsername)
                                 .orElseThrow(() -> new RuntimeException("Trainer not found"));
 
-                return userRepository.findAllByTrainer(trainer).stream()
+                // User a Map keyed by ID to ensure distinct members even if loaded through different relationships
+                java.util.Map<Long, User> membersMap = new java.util.HashMap<>();
+
+                // 1. Members directly assigned to this trainer via the 'trainer' field
+                userRepository.findAllByTrainer(trainer).forEach(u -> membersMap.put(u.getId(), u));
+
+                // 2. Members who have booked sessions (historical or upcoming) with this trainer
+                trainerSessionRepository.findAllByTrainer(trainer).forEach(session -> {
+                        if (session.getMember() != null) {
+                                membersMap.put(session.getMember().getId(), session.getMember());
+                        }
+                });
+
+                return membersMap.values().stream()
                                 .map(UserDTO::new)
+                                .sorted((a, b) -> a.getUsername().compareToIgnoreCase(b.getUsername()))
                                 .toList();
+        }
+
+        public java.util.Map<String, Object> getTrainerStats(String trainerUsername) {
+                User trainer = userRepository.findByUsername(trainerUsername)
+                                .orElseThrow(() -> new RuntimeException("Trainer not found"));
+
+                long totalMembers = getMyMembers(trainerUsername).size();
+
+                long completedSessions = trainerSessionRepository.findAllByTrainer(trainer).stream()
+                                .filter(s -> "COMPLETED".equalsIgnoreCase(s.getStatus()))
+                                .count();
+
+                long pendingInquiries = inquiryRepository.findByAssignedTo(trainer).stream()
+                                .filter(i -> i.getReply() == null || i.getReply().isEmpty())
+                                .count();
+
+                long totalEquipment = equipmentRepository.count();
+                long workingEquipment = equipmentRepository.findAll().stream()
+                                .filter(e -> Equipment.Status.WORKING == e.getStatus())
+                                .count();
+
+        return java.util.Map.of(
+                                "totalMembers", totalMembers,
+                                "completedSessions", completedSessions,
+                                "pendingInquiries", pendingInquiries,
+                                "totalEquipment", totalEquipment,
+                                "workingEquipment", workingEquipment);
+        }
+
+        public java.util.Map<String, Object> getTrainerAlerts(String trainerUsername) {
+                User trainer = userRepository.findByUsername(trainerUsername)
+                                .orElseThrow(() -> new RuntimeException("Trainer not found"));
+                                
+                long pendingSessions = trainerSessionRepository.findAllByTrainer(trainer).stream()
+                                .filter(s -> "UPCOMING".equalsIgnoreCase(s.getStatus()))
+                                .count();
+
+                // If adding more later (like chat messages), add them here
+                return java.util.Map.of(
+                    "schedule", pendingSessions,
+                    "total", pendingSessions
+                );
         }
 
         public void markAttendance(Long memberId, String status) {
@@ -142,6 +203,18 @@ public class TrainerService {
                 inquiry.setStatus(Inquiry.Status.CLOSED);
                 inquiry.setRepliedAt(LocalDateTime.now());
                 inquiryRepository.save(inquiry);
+
+                // Send Notification to User
+                if (inquiry.getUser() != null) {
+                    Notification notification = new Notification();
+                    notification.setUser(inquiry.getUser());
+                    notification.setTitle("Response: " + inquiry.getSubject());
+                    notification.setMessage(trainer.getUsername() + " has replied: " + reply);
+                    notification.setType("INQUIRY_REPLY");
+                    notification.setCreatedAt(LocalDateTime.now());
+                    notification.setRead(false);
+                    notificationRepository.save(notification);
+                }
         }
 
         public List<Equipment> getAllEquipment() {
@@ -171,12 +244,21 @@ public class TrainerService {
                 User member = userRepository.findById(memberId)
                                 .orElseThrow(() -> new RuntimeException("Member not found"));
 
+                // Protocol Check: Enforcement of "One Session Per Student Per Day" policy
+                LocalDateTime startOfDay = time.toLocalDate().atStartOfDay();
+                LocalDateTime endOfDay = time.toLocalDate().atTime(23, 59, 59);
+                List<TrainerSession> existingOnDay = trainerSessionRepository.findMemberSessionsOnDay(member, startOfDay, endOfDay);
+                if (!existingOnDay.isEmpty()) {
+                    throw new RuntimeException("Access Denied: You already have a session logged for this date (" + time.toLocalDate() + "). Members are strictly permitted to book only one workout session per day to ensure physiological recovery.");
+                }
+
                 TrainerSession session = new TrainerSession();
                 session.setTrainer(trainer);
                 session.setMember(member);
                 session.setSessionType(type);
                 session.setVenue(venue);
                 session.setSessionTime(time);
+                session.setEndTime(time.plusHours(1)); // Default for manual sessions
                 session.setStatus("UPCOMING");
                 return new TrainerSessionDTO(trainerSessionRepository.save(session));
         }
@@ -186,6 +268,11 @@ public class TrainerService {
                         return;
                 TrainerSession session = trainerSessionRepository.findById(sessionId)
                                 .orElseThrow(() -> new RuntimeException("Session not found"));
+                
+                if (session.getEndTime() != null && LocalDateTime.now().isBefore(session.getEndTime())) {
+                    throw new RuntimeException("Protocol Violation: You cannot mark this session as completed until it has officially concluded at " + session.getEndTime().toLocalTime());
+                }
+
                 session.setStatus(status != null ? status : "COMPLETED");
                 session.setNotes(notes);
                 trainerSessionRepository.save(session);
@@ -193,6 +280,60 @@ public class TrainerService {
 
         public TrainerSlotDTO createSlot(String trainerUsername, LocalDateTime start, LocalDateTime end,
                         Integer capacity) {
+                if (start.isBefore(LocalDateTime.now().plusHours(4))) {
+                    throw new RuntimeException("Validation Error: Slots must be scheduled at least 4 hours in advance.");
+                }
+
+                // Gym Hours Validation: Active 5 AM to 1 AM | Closed 1 AM - 5 AM
+                java.time.LocalTime startTime = start.toLocalTime();
+                java.time.LocalTime endTime = end.toLocalTime();
+                java.time.LocalTime closingLimit = java.time.LocalTime.of(1, 0);
+                java.time.LocalTime openingTime = java.time.LocalTime.of(5, 0);
+
+                // A time is invalid if it is AFTER 01:00 AM AND BEFORE 05:00 AM
+                boolean isStartInvalid = startTime.isAfter(closingLimit) && startTime.isBefore(openingTime);
+                boolean isEndInvalid = endTime.isAfter(closingLimit) && endTime.isBefore(openingTime);
+                
+                // Also check if the slot exactly starts/ends in the middle of the closed window
+                // (Though isAfter/isBefore handles most cases)
+                
+                if (isStartInvalid || isEndInvalid) {
+                    throw new RuntimeException("Operational Protocol: The facility is closed for maintenance between 01:00 AM and 05:00 AM. Please select a valid time.");
+                }
+
+                // Additional check: Does it span the entire closed window? (e.g. 12:50 AM to 5:10 AM)
+                // This is caught by the 4-hour max limit (duration > 4h), but good to be explicit
+                if (startTime.isBefore(openingTime) && startTime.isAfter(closingLimit.minusMinutes(1)) && endTime.isAfter(openingTime)) {
+                     // This is mostly redundant due to duration checks but adds safety
+                }
+
+                if (java.time.Duration.between(start, end).toHours() < 1) {
+                    throw new RuntimeException("Validation Error: Minimum slot duration is 1 hour.");
+                }
+
+                if (java.time.Duration.between(start, end).toHours() > 4) {
+                    throw new RuntimeException("Validation Error: Maximum slot duration is 4 hours.");
+                }
+
+                if (capacity > 8) {
+                    throw new RuntimeException("Validation Error: Maximum slot capacity is 8 members.");
+                }
+
+                // Gym Capacity Check: Max 5 trainers at the same time
+                List<TrainerSlot> overlappingSlots = trainerSlotRepository.findOverlappingSlots(start, end);
+                java.util.Set<Long> uniqueTrainerIds = overlappingSlots.stream()
+                        .map(s -> s.getTrainer().getId())
+                        .collect(Collectors.toSet());
+                
+                if (uniqueTrainerIds.size() >= 5) {
+                    // Check if current trainer is already part of these slots
+                    User currentTrainer = userRepository.findByUsername(trainerUsername)
+                        .orElseThrow(() -> new RuntimeException("Trainer not found"));
+                    if (!uniqueTrainerIds.contains(currentTrainer.getId())) {
+                        throw new RuntimeException("Sorry, the " + start.toLocalTime() + " slot has reached its maximum capacity. Please select another time.");
+                    }
+                }
+
                 User trainer = userRepository.findByUsername(trainerUsername)
                                 .orElseThrow(() -> new RuntimeException("Trainer not found"));
 
@@ -210,6 +351,12 @@ public class TrainerService {
                 User trainer = userRepository.findByUsername(trainerUsername)
                                 .orElseThrow(() -> new RuntimeException("Trainer not found"));
                 return trainerSlotRepository.findByTrainerId(trainer.getId()).stream()
+                                .map(TrainerSlotDTO::new)
+                                .toList();
+        }
+
+        public List<TrainerSlotDTO> getAllSlots() {
+                return trainerSlotRepository.findAll().stream()
                                 .map(TrainerSlotDTO::new)
                                 .toList();
         }
@@ -237,10 +384,30 @@ public class TrainerService {
                         // Nobody booked, free to change everything
                         if (newCapacity != null)
                                 slot.setCapacity(newCapacity);
-                        if (newStart != null)
+                        
+                        // Update time if provided
+                        if (newStart != null && newEnd != null) {
+                            // Gym Hours Validation: Active 5 AM to 1 AM | Closed 1 AM - 5 AM
+                            java.time.LocalTime startTime = newStart.toLocalTime();
+                            java.time.LocalTime endTime = newEnd.toLocalTime();
+                            java.time.LocalTime closingLimit = java.time.LocalTime.of(1, 0);
+                            java.time.LocalTime openingTime = java.time.LocalTime.of(5, 0);
+
+                            boolean isStartInvalid = startTime.isAfter(closingLimit) && startTime.isBefore(openingTime);
+                            boolean isEndInvalid = endTime.isAfter(closingLimit) && endTime.isBefore(openingTime);
+                            
+                            if (isStartInvalid || isEndInvalid || (startTime.equals(closingLimit) && startTime.getNano() == 0)) {
+                                throw new RuntimeException("Operational Protocol: The facility is closed for maintenance between 01:00 AM and 05:00 AM. Please select a valid time.");
+                            }
+
+                            slot.setStartTime(newStart);
+                            slot.setEndTime(newEnd);
+                        } else { // If only one of newStart or newEnd is provided, or neither, keep existing
+                            if (newStart != null)
                                 slot.setStartTime(newStart);
-                        if (newEnd != null)
+                            if (newEnd != null)
                                 slot.setEndTime(newEnd);
+                        }
                 }
 
                 return new TrainerSlotDTO(trainerSlotRepository.save(slot));
@@ -269,6 +436,7 @@ public class TrainerService {
                 trainerSlotRepository.delete(slot);
         }
 
+        @Transactional
         public void bookSlot(String memberUsername, Long slotId) {
                 User member = userRepository.findByUsername(memberUsername)
                                 .orElseThrow(() -> new RuntimeException("Member not found"));
@@ -280,11 +448,26 @@ public class TrainerService {
                         throw new RuntimeException("Slot is full");
                 }
 
+                // Protocol Check: Enforcement of "One Session Per Student Per Day" policy
+                LocalDateTime sessionTime = slot.getStartTime();
+                LocalDateTime startOfDay = sessionTime.toLocalDate().atStartOfDay();
+                LocalDateTime endOfDay = sessionTime.toLocalDate().atTime(23, 59, 59);
+                List<TrainerSession> existingOnDay = trainerSessionRepository.findMemberSessionsOnDay(member, startOfDay, endOfDay);
+                if (!existingOnDay.isEmpty()) {
+                    throw new RuntimeException("Operational Protocol: You already have a session confirmed for this date. The training policy restricts members to one session per day to ensure optimal student progression.");
+                }
+
+                // Associate the member with this trainer to ensure they appear in My Members lists
+                // This builds a permanent relationship alongside the specific session
+                member.setTrainer(slot.getTrainer());
+                userRepository.save(member);
+
                 TrainerSession session = new TrainerSession();
                 session.setTrainer(slot.getTrainer());
                 session.setMember(member);
                 session.setSlot(slot);
                 session.setSessionTime(slot.getStartTime());
+                session.setEndTime(slot.getEndTime());
                 session.setSessionType("Standard Session");
                 session.setVenue("Gym Floor");
                 session.setStatus("UPCOMING");
@@ -383,4 +566,40 @@ public class TrainerService {
 
                 userRepository.save(user);
         }
+
+    @Transactional
+    public void sendMessageToMember(String trainerUsername, Long memberId, String message) {
+        if (message == null || message.trim().length() < 10) {
+            throw new RuntimeException("Operational Protocol: Notification messages must be at least 10 characters long to provide substantive guidance.");
+        }
+
+        User member = userRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Athlete profile not found."));
+
+        User trainer = userRepository.findByUsername(trainerUsername)
+                .orElseThrow(() -> new RuntimeException("Trainer record not found."));
+
+        // Create the notification
+        Notification notification = new Notification();
+        notification.setTitle("Technical Insight: Message from " + trainer.getUsername());
+        notification.setMessage(message);
+        notification.setType("PROGRESS_ADVISORY");
+        notification.setUser(member);
+        notification.setRead(false);
+        notificationRepository.save(notification);
+
+        // Send Email Notification
+        if (member.getEmail() != null && !member.getEmail().isEmpty()) {
+            String emailBody = "Hello " + member.getUsername() + ",\n\n" +
+                    "Your Lead Trainer, " + trainer.getUsername() + ", has dispatched a specific guidance message regarding your progression:\n\n" +
+                    "--------------------------------------------------\n" +
+                    message + "\n" +
+                    "--------------------------------------------------\n\n" +
+                    "Please log in to your MuscleHub Dashboard to respond or adjust your training protocol accordingly.\n\n" +
+                    "Best regards,\nMuscleHub Operations";
+            emailService.sendEmail(member.getEmail(), "MuscleHub Advisory: Message from " + trainer.getUsername(), emailBody);
+        }
+    }
 }
+/ /   R e f i n e d   s t a t u s   t r a c k i n g   l o g i c   f o r   m e m b e r   p r o g r e s s  
+ 

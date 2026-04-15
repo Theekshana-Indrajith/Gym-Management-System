@@ -28,6 +28,7 @@ public class TrainerSession {
     private String venue;
     private String status; // UPCOMING, COMPLETED, CANCELLED
     private LocalDateTime sessionTime;
+    private LocalDateTime endTime;
 
     @Column(columnDefinition = "TEXT")
     private String notes;

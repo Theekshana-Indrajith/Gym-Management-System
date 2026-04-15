@@ -22,17 +22,6 @@ public class AdminService {
     private final InquiryRepository inquiryRepository;
     private final MaintenanceLogRepository maintenanceLogRepository;
     private final NotificationRepository notificationRepository;
-    private final MailService mailService;
-    private final WorkoutPlanRepository workoutPlanRepository;
-    private final WorkoutLogRepository workoutLogRepository;
-    private final WorkoutAssignmentRepository workoutAssignmentRepository;
-    private final MealPlanRepository mealPlanRepository;
-    private final SupplementOrderRepository supplementOrderRepository;
-    private final MembershipRequestRepository membershipRequestRepository;
-    private final ProgressLogRepository progressLogRepository;
-    private final TrainerSlotRepository trainerSlotRepository;
-    private final TrainerSessionRepository trainerSessionRepository;
-    private final AttendanceRepository attendanceRepository;
 
     public List<Map<String, Object>> getAdminAlerts() {
         List<Map<String, Object>> alerts = new ArrayList<>();
@@ -213,10 +202,6 @@ public class AdminService {
         Equipment existing = equipmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Equipment not found"));
 
-        if (data.getCost() != null && data.getCost() < 0) {
-            throw new RuntimeException("Equipment cost cannot be negative");
-        }
-
         existing.setName(data.getName());
         existing.setBrand(data.getBrand());
         existing.setSerialNumber(data.getSerialNumber());
@@ -229,7 +214,6 @@ public class AdminService {
         // Alternative Recommendation Sync
         existing.setAlternativeId(data.getAlternativeId());
         existing.setAlternativeName(data.getAlternativeName());
-        existing.setFallbackExercise(data.getFallbackExercise());
 
         return equipmentRepository.save(existing);
     }
@@ -252,11 +236,6 @@ public class AdminService {
     public void resolveEquipment(Long equipmentId, String adminUsername, String action, String notes, Double cost) {
         if (equipmentId == null)
             throw new RuntimeException("ID is null");
-        
-        if (cost == null || cost <= 0) {
-            throw new RuntimeException("Repair cost must be greater than 0");
-        }
-        
         Equipment existing = equipmentRepository.findById(equipmentId)
                 .orElseThrow(() -> new RuntimeException("Equipment not found"));
         User admin = userRepository.findByUsername(adminUsername)

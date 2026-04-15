@@ -19,6 +19,8 @@ public class TrainerSessionDTO {
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime sessionTime;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime endTime;
     private String notes;
 
     @Data
@@ -36,6 +38,7 @@ public class TrainerSessionDTO {
         this.venue = session.getVenue();
         this.status = session.getStatus();
         this.sessionTime = session.getSessionTime();
+        this.endTime = session.getEndTime();
         this.notes = session.getNotes();
     }
 }
