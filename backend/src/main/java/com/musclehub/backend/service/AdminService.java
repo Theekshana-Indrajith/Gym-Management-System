@@ -23,61 +23,6 @@ public class AdminService {
     private final MaintenanceLogRepository maintenanceLogRepository;
     private final NotificationRepository notificationRepository;
 
-    public List<Map<String, Object>> getAdminAlerts() {
-        List<Map<String, Object>> alerts = new ArrayList<>();
-
-        // Pending Supplement Orders
-        long pendingOrders = supplementOrderRepository.findByStatus(SupplementOrder.OrderStatus.PENDING).size() 
-                           + supplementOrderRepository.findByStatus(SupplementOrder.OrderStatus.AWAITING_PAYMENT_APPROVAL).size();
-        if (pendingOrders > 0) {
-            alerts.add(Map.of(
-                "title", pendingOrders + " Pending Orders",
-                "message", "There are supplement orders waiting to be processed.",
-                "type", "ORDER",
-                "link", "/admin/supplements",
-                "count", pendingOrders
-            ));
-        }
-
-        // Open Inquiries
-        long openInquiries = inquiryRepository.findByStatus(Inquiry.Status.OPEN).size();
-        if (openInquiries > 0) {
-            alerts.add(Map.of(
-                "title", openInquiries + " Open Inquiries",
-                "message", "Members are waiting for a response to their inquiries.",
-                "type", "INQUIRY",
-                "link", "/admin/inquiries",
-                "count", openInquiries
-            ));
-        }
-
-        // Pending Membership Requests
-        long pendingMemberships = membershipRequestRepository.findAllByStatus(MembershipRequest.Status.PENDING).size();
-        if (pendingMemberships > 0) {
-            alerts.add(Map.of(
-                "title", pendingMemberships + " Membership Requests",
-                "message", "New users have requested membership access.",
-                "type", "MEMBERSHIP",
-                "link", "/admin/members",
-                "count", pendingMemberships
-            ));
-        }
-
-        // Broken Equipment
-        long brokenEquipment = equipmentRepository.findByStatus(Equipment.Status.BROKEN).size();
-        if (brokenEquipment > 0) {
-            alerts.add(Map.of(
-                "title", brokenEquipment + " Broken Equipment",
-                "message", "Some equipment have been reported broken.",
-                "type", "EQUIPMENT",
-                "link", "/admin/equipment",
-                "count", brokenEquipment
-            ));
-        }
-
-        return alerts;
-    }
-
     public List<UserDTO> getAllUsersByRole(User.Role role) {
         return userRepository.findAllByRole(role).stream()
                 .map(UserDTO::new)

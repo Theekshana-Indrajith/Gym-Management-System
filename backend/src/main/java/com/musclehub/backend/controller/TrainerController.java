@@ -152,11 +152,6 @@ public class TrainerController {
         return ResponseEntity.ok(trainerService.getMySlots(authentication.getName()));
     }
 
-    @GetMapping("/all-slots")
-    public ResponseEntity<?> getAllSlots() {
-        return ResponseEntity.ok(trainerService.getAllSlots());
-    }
-
     // Changing path and method to POST to avoid conflict with static resource
     // handling and PUT issues
     @PostMapping("/update-member-fitness")
