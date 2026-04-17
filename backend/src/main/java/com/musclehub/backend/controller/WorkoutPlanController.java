@@ -50,6 +50,13 @@ public class WorkoutPlanController {
         return workoutPlanService.createOrAssignPlan(plan, authentication.getName());
     }
 
+    @PostMapping("/{id}/deactivate")
+    public ResponseEntity<?> deactivatePlan(@PathVariable Long id,
+            org.springframework.security.core.Authentication authentication) {
+        workoutPlanService.deactivatePlan(id, authentication.getName());
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePlan(@PathVariable Long id,
             org.springframework.security.core.Authentication authentication) {

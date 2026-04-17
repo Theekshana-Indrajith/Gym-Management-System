@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import TrainerSidebar from '../components/TrainerSidebar';
 import TrainerHeader from '../components/TrainerHeader';
-import { Users, Calendar, Activity, CheckCircle, TrendingUp, Box, Facebook, Twitter, Instagram, X, ArrowUpRight, Dumbbell, LineChart as LineChartIcon } from 'lucide-react';
+import { Users, Calendar, Activity, CheckCircle, TrendingUp, Box, Facebook, Twitter, Instagram, X, ArrowUpRight, LineChart as LineChartIcon } from 'lucide-react';
 import axios from 'axios';
 
 const TrainerDashboard = () => {
@@ -197,9 +197,9 @@ const TrainerDashboard = () => {
                             <p className="text-4xl font-black text-slate-900">{members.length}</p>
                         </div>
                         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl">
-                            <Dumbbell size={32} className="text-orange-500 mb-4" />
-                            <h3 className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-1">Facility Availability</h3>
-                            <p className="text-4xl font-black text-slate-900">{stats.workingEquipment} <span className="text-sm text-slate-400 font-bold uppercase tracking-widest">/ {stats.totalEquipment} Ready</span></p>
+                            <CheckCircle size={32} className="text-blue-500 mb-4" />
+                            <h3 className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-1">Sessions Completed</h3>
+                            <p className="text-4xl font-black text-slate-900">12</p>
                         </div>
                         <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-xl flex flex-col">
                             <h3 className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mb-4 flex items-center gap-2">

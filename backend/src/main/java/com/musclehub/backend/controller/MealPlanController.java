@@ -50,6 +50,13 @@ public class MealPlanController {
         return mealPlanService.createOrAssignPlan(plan, authentication.getName());
     }
 
+    @PostMapping("/{id}/deactivate")
+    public ResponseEntity<?> deactivatePlan(@PathVariable Long id,
+            org.springframework.security.core.Authentication authentication) {
+        mealPlanService.deactivatePlan(id, authentication.getName());
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePlan(@PathVariable Long id,
             org.springframework.security.core.Authentication authentication) {

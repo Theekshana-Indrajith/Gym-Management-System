@@ -136,7 +136,7 @@ const MyProgress = () => {
     };
 
     const SimpleChart = ({ logs, valueKey, color, id }) => {
-        if (logs.length < 2) return <div className="h-64 flex items-center justify-center text-slate-400 font-medium bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">Not enough data to generate graph. Update your profile daily!</div>;
+        if (!logs || logs.length === 0) return <div className="h-64 flex items-center justify-center text-slate-400 font-medium bg-slate-50/50 rounded-3xl border border-dashed border-slate-200 px-6 text-center">Update your profile to generate this graph!</div>;
 
         const data = logs.map(l => l[valueKey]);
         const max = Math.max(...data) * 1.1;
@@ -145,54 +145,65 @@ const MyProgress = () => {
         const width = 800;
         const height = 200;
 
-        const points = data.map((val, i) => {
-            const x = (i / (data.length - 1)) * width;
-            const y = height - ((val - min) / range) * height;
-            return `${x},${y}`;
-        }).join(' ');
+        let points = "";
+        if (logs.length > 1) {
+            points = data.map((val, i) => {
+                const x = (i / (data.length - 1)) * width;
+                const y = height - ((val - min) / range) * height;
+                return `${x},${y}`;
+            }).join(' ');
+        }
 
         return (
             <div className="relative w-full bg-slate-50/50 rounded-3xl p-8 border border-slate-100 overflow-visible">
                 <div className="h-64 w-full">
                     <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
-                        <defs>
-                            <linearGradient id={`gradient-${id}`} x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor={color} stopOpacity="0.4" />
-                                <stop offset="100%" stopColor={color} stopOpacity="0" />
-                            </linearGradient>
-                        </defs>
-                        <path
-                            d={`M 0,${height} L ${points} L ${width},${height} Z`}
-                            fill={`url(#gradient-${id})`}
-                        />
-                        <motion.path
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: 1 }}
-                            transition={{ duration: 2, ease: "easeInOut" }}
-                            d={`M ${points}`}
-                            fill="none"
-                            stroke={color}
-                            strokeWidth="4"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-
+                        {logs.length > 1 && (
+                            <>
+                                <defs>
+                                    <linearGradient id={`gradient-${id}`} x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor={color} stopOpacity="0.4" />
+                                        <stop offset="100%" stopColor={color} stopOpacity="0" />
+                                    </linearGradient>
+                                </defs>
+                                <path
+                                    d={`M 0,${height} L ${points} L ${width},${height} Z`}
+                                    fill={`url(#gradient-${id})`}
+                                />
+                                <motion.path
+                                    initial={{ pathLength: 0 }}
+                                    animate={{ pathLength: 1 }}
+                                    transition={{ duration: 2, ease: "easeInOut" }}
+                                    d={`M ${points}`}
+                                    fill="none"
+                                    stroke={color}
+                                    strokeWidth="4"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            </>
+                        )}
                         {/* Data Points and Labels */}
                         {logs.map((log, i) => {
-                            const x = (i / (logs.length - 1)) * width;
+                            const x = logs.length === 1 ? width / 2 : (i / (logs.length - 1)) * width;
                             const y = height - ((log[valueKey] - min) / range) * height;
                             return (
                                 <g key={i}>
-                                    <circle cx={x} cy={y} r="4" fill="white" stroke={color} strokeWidth="2" />
+                                    <circle cx={x} cy={y} r={logs.length === 1 ? "8" : "4"} fill="white" stroke={color} strokeWidth={logs.length === 1 ? "4" : "2"} />
                                     <text
                                         x={x}
                                         y={height + 35}
                                         textAnchor="middle"
                                         className="text-[18px] font-black fill-slate-700 uppercase"
-                                        transform={`rotate(35, ${x}, ${height + 35})`}
+                                        transform={logs.length === 1 ? undefined : `rotate(35, ${x}, ${height + 35})`}
                                     >
                                         {new Date(log.logDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                     </text>
+                                    {logs.length === 1 && (
+                                        <text x={x} y={y - 20} textAnchor="middle" className="text-xl font-black fill-slate-900">
+                                            {log[valueKey]} {id === 'weight' ? 'kg' : ''}
+                                        </text>
+                                    )}
                                 </g>
                             );
                         })}

@@ -192,18 +192,6 @@ public class TrainerController {
         }
     }
 
-    @PostMapping("/send-member-message")
-    public ResponseEntity<?> sendMemberMessage(Authentication authentication, @RequestBody Map<String, Object> payload) {
-        try {
-            Long memberId = Long.valueOf(payload.get("memberId").toString());
-            String message = payload.get("message").toString();
-            trainerService.sendMessageToMember(authentication.getName(), memberId, message);
-            return ResponseEntity.ok("Message successfully dispatched to member");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
     @GetMapping("/member/{id}/progress")
     public ResponseEntity<?> getMemberProgress(@PathVariable Long id) {
         return ResponseEntity.ok(trainerService.getMemberProgress(id));

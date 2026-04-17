@@ -106,44 +106,95 @@ const WorkoutDiet = () => {
                             transition={{ duration: 0.8 }}
                             className="bg-slate-50 rounded-3xl p-8 shadow-inner border border-slate-100 transform hover:rotate-1 transition-transform duration-500"
                         >
-                            {/* AI Dashboard Preview */}
-                            <div className="bg-white rounded-2xl shadow-xl p-6 border border-slate-100">
-                                <div className="flex justify-between items-center mb-6">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-full bg-slate-200"></div>
-                                        <h4 className="font-bold text-lg">Daily Insight</h4>
-                                    </div>
-                                    <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">98% Accuracy</span>
-                                </div>
-                                <div className="space-y-6">
-                                    <div>
-                                        <div className="flex justify-between text-sm mb-1">
-                                            <span className="text-slate-500 font-medium">Calorie Target</span>
-                                            <span className="font-bold text-slate-900">2,450 / 2,800 kcal</span>
-                                        </div>
-                                        <div className="w-full bg-slate-100 rounded-full h-3">
-                                            <div className="bg-gradient-to-r from-blue-500 to-blue-400 h-3 rounded-full w-[88%] shadow-sm"></div>
-                                        </div>
-                                    </div>
+                            {/* Neural Performance Matrix Preview */}
+                            <div className="bg-slate-900 rounded-[2.5rem] p-1 shadow-2xl overflow-hidden group">
+                                <div className="bg-slate-800/80 backdrop-blur-xl rounded-[2.3rem] p-8 border border-white/5 relative overflow-hidden">
+                                    {/* Abstract background elements */}
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -ml-16 -mb-16"></div>
 
-                                    <div>
-                                        <div className="flex justify-between text-sm mb-1">
-                                            <span className="text-slate-500 font-medium">Recovery Status</span>
-                                            <span className="font-bold text-slate-900">Optimal</span>
+                                    <div className="relative z-10">
+                                        <div className="flex justify-between items-center mb-8">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-3 bg-blue-600/20 rounded-2xl text-blue-400 group-hover:scale-110 transition-transform">
+                                                    <Brain size={24} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-white font-black text-xl tracking-tight">Neural Engine</h4>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Live Optimization</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-2xl font-black text-white">99.4%</div>
+                                                <div className="text-[10px] font-black uppercase tracking-widest text-blue-400">Gen-Match</div>
+                                            </div>
                                         </div>
-                                        <div className="w-full bg-slate-100 rounded-full h-3">
-                                            <div className="bg-gradient-to-r from-purple-500 to-pink-400 h-3 rounded-full w-[65%] shadow-sm"></div>
+
+                                        <div className="space-y-6">
+                                            {/* Metrics Grid */}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="bg-slate-900/50 p-4 rounded-2xl border border-white/5">
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Hypertrophy Index</p>
+                                                    <p className="text-white font-bold text-lg">0.84 <span className="text-emerald-400 text-xs ml-1">↑12%</span></p>
+                                                </div>
+                                                <div className="bg-slate-900/50 p-4 rounded-2xl border border-white/5">
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Metabolic Rate</p>
+                                                    <p className="text-white font-bold text-lg">Optimal</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Progress Visualization */}
+                                            <div className="space-y-4 pt-2">
+                                                <div>
+                                                    <div className="flex justify-between text-[11px] font-black uppercase tracking-widest mb-2">
+                                                        <span className="text-slate-400">Protein Synthesis</span>
+                                                        <span className="text-blue-400">Critical Stage</span>
+                                                    </div>
+                                                    <div className="w-full bg-slate-900 rounded-full h-2 px-0.5 flex items-center">
+                                                        <motion.div 
+                                                            initial={{ width: 0 }}
+                                                            whileInView={{ width: '85%' }}
+                                                            transition={{ duration: 1.5, delay: 0.5 }}
+                                                            className="bg-gradient-to-r from-blue-600 to-indigo-400 h-1 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+                                                        ></motion.div>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="flex justify-between text-[11px] font-black uppercase tracking-widest mb-2">
+                                                        <span className="text-slate-400">Cortisol Levels</span>
+                                                        <span className="text-emerald-400">Stabilized</span>
+                                                    </div>
+                                                    <div className="w-full bg-slate-900 rounded-full h-2 px-0.5 flex items-center">
+                                                        <motion.div 
+                                                            initial={{ width: 0 }}
+                                                            whileInView={{ width: '32%' }}
+                                                            transition={{ duration: 1.5, delay: 0.7 }}
+                                                            className="bg-gradient-to-r from-emerald-600 to-teal-400 h-1 rounded-full shadow-[0_0_15px_rgba(5,150,105,0.4)]"
+                                                        ></motion.div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* AI Command Pulse */}
+                                            <div className="bg-blue-600/10 border border-blue-500/20 rounded-2xl p-5 relative group/msg">
+                                                <div className="flex gap-4 items-start">
+                                                    <Sparkles className="text-blue-400 shrink-0 mt-1" size={18} />
+                                                    <p className="text-sm text-slate-200 leading-relaxed font-medium">
+                                                        "System detected high central nervous system fatigue. Shifting next session to <span className="text-blue-400 font-bold">Active Recovery Protocol</span>."
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Non-interactive Status Badge */}
+                                            <div className="flex items-center justify-center gap-2 py-4 border-t border-white/5 mt-2">
+                                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_8px_#3b82f6] animate-pulse"></div>
+                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Neural Sync in Progress...</span>
+                                            </div>
                                         </div>
                                     </div>
-
-                                    <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex gap-3">
-                                        <div className="min-w-fit mt-0.5">✨</div>
-                                        <p className="text-sm text-blue-800 font-medium">Based on your recent lifts, increase protein intake by 15g today for optimal muscle recovery.</p>
-                                    </div>
-
-                                    <button className="w-full mt-2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-bold transition-all shadow-lg hover:shadow-xl">
-                                        Generate New Plan
-                                    </button>
                                 </div>
                             </div>
                         </motion.div>
