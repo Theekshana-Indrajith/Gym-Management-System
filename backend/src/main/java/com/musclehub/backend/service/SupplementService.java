@@ -25,6 +25,16 @@ public class SupplementService {
     }
 
     public Supplement addSupplement(Supplement supplement) {
+        if (supplement.getPrice() == null || supplement.getPrice() < 0) {
+            throw new RuntimeException("Price cannot be negative");
+        }
+        if (supplement.getStock() == null || supplement.getStock() < 0) {
+            throw new RuntimeException("Stock cannot be negative");
+        }
+        if (supplement.getName() == null || supplement.getName().trim().isEmpty()) {
+            throw new RuntimeException("Supplement name is required");
+        }
+
         Supplement saved = supplementRepository.save(supplement);
         notificationService.createGlobalNotification(
                 "New Supplement Added! 📢",
@@ -38,6 +48,13 @@ public class SupplementService {
 
         boolean wasOutOfStock = (supplement.getStock() == null || supplement.getStock() <= 0);
 
+        if (supplementDetails.getPrice() != null && supplementDetails.getPrice() < 0) {
+            throw new RuntimeException("Price cannot be negative");
+        }
+        if (supplementDetails.getStock() != null && supplementDetails.getStock() < 0) {
+            throw new RuntimeException("Stock cannot be negative");
+        }
+
         supplement.setName(supplementDetails.getName());
         supplement.setBrand(supplementDetails.getBrand());
         supplement.setCategory(supplementDetails.getCategory());
@@ -45,6 +62,9 @@ public class SupplementService {
         supplement.setStock(supplementDetails.getStock());
         supplement.setDescription(supplementDetails.getDescription());
         supplement.setImage(supplementDetails.getImage());
+        supplement.setServingSize(supplementDetails.getServingSize());
+        supplement.setDailyFrequency(supplementDetails.getDailyFrequency());
+        supplement.setSuggestedUse(supplementDetails.getSuggestedUse());
 
         Supplement saved = supplementRepository.save(supplement);
 
@@ -57,7 +77,7 @@ public class SupplementService {
         } else {
             notificationService.createGlobalNotification(
                     "Supplement Updated: " + saved.getName(),
-                    "The details for " + saved.getName() + " have been updated. New Price: $" + saved.getPrice()
+                    "The details for " + saved.getName() + " have been updated. New Price: LKR" + saved.getPrice()
                             + " | Stock: " + saved.getStock() + " units. Check it out!",
                     "SUPPLEMENT");
         }
@@ -72,6 +92,10 @@ public class SupplementService {
     @Transactional
     public Supplement buySupplement(Long id, Integer quantity) {
         Supplement supplement = getSupplementById(id);
+
+        if (quantity == null || quantity <= 0) {
+            throw new RuntimeException("Quantity must be at least 1");
+        }
 
         if (supplement.getStock() < quantity) {
             throw new RuntimeException("Insufficient stock");

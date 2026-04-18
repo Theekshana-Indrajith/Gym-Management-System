@@ -27,6 +27,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/api/membership/public/packages").permitAll()
+                        .requestMatchers("/api/membership/packages").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/supplements/**").authenticated()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/supplements/*/buy")
                         .authenticated()

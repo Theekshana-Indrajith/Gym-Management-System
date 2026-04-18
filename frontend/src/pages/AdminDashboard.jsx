@@ -45,7 +45,7 @@ const AdminDashboard = () => {
     const brokenEquipment = extraStats.equipment.filter(e => e.status !== 'WORKING');
     const lowStockSupps = extraStats.supplements.filter(s => s.stock < 10);
     const pendingInquiries = extraStats.inquiries.filter(i => !i.reply);
-    
+
     // Revenue logic: Count members with active packages (Mocking prices if needed or using backend)
     // For now, let's just use the real aggregate numbers we have.
     const activeInventoryCount = extraStats.equipment.length + extraStats.supplements.length;
@@ -56,7 +56,7 @@ const AdminDashboard = () => {
         const max = Math.max(...data) * 1.1;
         const min = Math.min(...data) * 0.9;
         const range = max - min || 1;
-        
+
         const points = data.map((val, i) => {
             const x = (i / (data.length - 1)) * width;
             const y = height - ((val - min) / range) * height;
@@ -118,7 +118,7 @@ const AdminDashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
                         <OverviewCard title="Total Members" value={stats.totalMembers} icon={Users} color="bg-blue-600" trend="up" trendValue="+12%" />
                         <OverviewCard title="Active Trainers" value={stats.totalTrainers} icon={ShieldCheck} color="bg-purple-600" trend="up" trendValue="+2" />
-                        <OverviewCard title="Pending Review" value={extraStats.pendingRequests.length} icon={DollarSign} color="bg-emerald-600" trend="up" trendValue="Action Required" />
+                        <OverviewCard title="Pending Review" value={extraStats.pendingRequests.length} icon={ShieldCheck} color="bg-emerald-600" trend="up" trendValue="Action Required" />
                         <OverviewCard title="Gym Assets" value={activeInventoryCount} icon={Box} color="bg-slate-900" trend="up" trendValue="Operational" />
                     </div>
 
@@ -126,16 +126,83 @@ const AdminDashboard = () => {
                         <div className="lg:col-span-3 bg-white rounded-[2.5rem] p-10 shadow-xl border border-slate-100 flex flex-col justify-between overflow-hidden relative">
                             <div className="relative z-10 flex justify-between items-start mb-8">
                                 <div>
-                                    <h3 className="text-2xl font-black text-slate-900">Operations Snapshot</h3>
-                                    <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Cross-departmental performance data</p>
+                                    <h3 className="text-2xl font-black text-slate-900">Operational Overview</h3>
+                                    <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Personnel & Engagement Summary</p>
                                 </div>
-                                <div className="bg-emerald-500/10 text-emerald-600 px-4 py-2 rounded-xl flex items-center gap-2 font-black text-xs">
-                                    <TrendingUp size={16} /> REAL-TIME CONNECTED
+                                <div className="bg-blue-500/10 text-blue-600 px-4 py-2 rounded-xl flex items-center gap-2 font-black text-xs">
+                                    <Activity size={16} /> LIVE DATA FEED
                                 </div>
                             </div>
 
-                            <div className="flex-1 mt-4">
-                                <SimpleChart data={[30, 45, extraStats.equipment.length, extraStats.supplements.length, extraStats.pendingRequests.length, extraStats.inquiries.length, 58, 72]} color="#10b981" id="rev" />
+                            <div className="grid grid-cols-3 gap-8 mb-4">
+                                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-blue-200 transition-all">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center font-black shadow-inner"><Users size={20} /></div>
+                                        <h4 className="font-bold text-slate-900">Personnel Mix</h4>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-slate-500 font-medium">Admins</span>
+                                            <span className="font-black text-slate-900">{stats.totalAdmins}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-slate-500 font-medium">Coaching Staff</span>
+                                            <span className="font-black text-slate-900">{stats.totalTrainers}</span>
+                                        </div>
+                                        <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-2">
+                                            <div 
+                                                className="bg-blue-600 h-full transition-all duration-1000" 
+                                                style={{ width: `${(stats.totalAdmins / Math.max(stats.totalAdmins + stats.totalTrainers, 1)) * 100}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-emerald-200 transition-all">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center font-black shadow-inner"><Target size={20} /></div>
+                                        <h4 className="font-bold text-slate-900">Engagement</h4>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-slate-500 font-medium">Open Inquiries</span>
+                                            <span className="font-black text-emerald-600">{pendingInquiries.length}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-slate-500 font-medium">New Proposals</span>
+                                            <span className="font-black text-slate-900">{extraStats.pendingRequests.length}</span>
+                                        </div>
+                                        <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-2">
+                                            <div 
+                                                className="bg-emerald-500 h-full transition-all duration-1000" 
+                                                style={{ width: `${(pendingInquiries.length / Math.max(pendingInquiries.length + extraStats.pendingRequests.length, 1)) * 100}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-orange-200 transition-all">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center font-black shadow-inner"><Box size={20} /></div>
+                                        <h4 className="font-bold text-slate-900">Resource Health</h4>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-slate-500 font-medium">Asset Issues</span>
+                                            <span className="font-black text-red-500">{brokenEquipment.length}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-slate-500 font-medium">Low Stock Items</span>
+                                            <span className="font-black text-orange-600">{lowStockSupps.length}</span>
+                                        </div>
+                                        <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-2">
+                                            <div 
+                                                className="bg-orange-500 h-full transition-all duration-1000" 
+                                                style={{ width: `${(brokenEquipment.length / Math.max(brokenEquipment.length + lowStockSupps.length, 1)) * 100}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-4 gap-4 mt-8 pt-8 border-t border-slate-50">
@@ -163,7 +230,7 @@ const AdminDashboard = () => {
                             <div className="relative z-10 h-full flex flex-col justify-between">
                                 <h3 className="text-xl font-bold mb-6">Premium Admin Shortcuts</h3>
                                 <div className="space-y-3">
-                                    <button 
+                                    <button
                                         onClick={() => navigate('/admin/manage-trainers')}
                                         className="w-full bg-white/5 hover:bg-white/10 p-4 rounded-2xl flex items-center justify-between group transition-all"
                                     >
@@ -173,7 +240,7 @@ const AdminDashboard = () => {
                                         </div>
                                         <TrendingUp size={14} className="text-blue-500 opacity-0 group-hover:opacity-100" />
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => navigate('/admin/membership')}
                                         className="w-full bg-white/5 hover:bg-white/10 p-4 rounded-2xl flex items-center justify-between group transition-all"
                                     >
@@ -183,7 +250,7 @@ const AdminDashboard = () => {
                                         </div>
                                         <TrendingUp size={14} className="text-emerald-500 opacity-0 group-hover:opacity-100" />
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => navigate('/admin/inventory')}
                                         className="w-full bg-white/5 hover:bg-white/10 p-4 rounded-2xl flex items-center justify-between group transition-all"
                                     >
@@ -227,7 +294,7 @@ const AdminDashboard = () => {
 
                         <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl">
                             <h3 className="text-2xl font-black text-slate-900 mb-8 flex justify-between items-center">
-                                Task Stream 
+                                Task Stream
                                 <span className="p-2 bg-blue-50 text-blue-600 rounded-full"><TrendingUp size={16} /></span>
                             </h3>
                             <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2">

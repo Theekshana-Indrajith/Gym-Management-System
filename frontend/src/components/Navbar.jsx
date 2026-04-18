@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Menu, X, Dumbbell, ShoppingBag, Tag, User, Phone, Home, Info } from 'lucide-react';
+import { Menu, X, Dumbbell, Phone, Home, Sparkles, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const Navbar = () => {
+const Navbar = ({ transparentTextWhite = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
 
@@ -18,19 +18,22 @@ const Navbar = () => {
     const navLinks = [
         { name: 'Home', href: '/', icon: Home },
         { name: 'Workout & Diet', href: '/workout-diet', icon: Dumbbell },
-        { name: 'Offers', href: '/offers', icon: Tag },
-        { name: 'Shop', href: '/shop', icon: ShoppingBag },
-        { name: 'About Us', href: '/about', icon: Info },
+        { name: 'Offers', href: '/offers', icon: Sparkles },
+        { name: 'About Us', href: '/about', icon: Users },
         { name: 'Contact', href: '/contact', icon: Phone },
     ];
 
+    const isTransparent = !scrolled && !isOpen;
+    const textColor = isTransparent && transparentTextWhite ? 'text-white' : 'text-slate-700';
+    const hoverColor = isTransparent && transparentTextWhite ? 'hover:text-blue-200' : 'hover:text-blue-600';
+
     return (
-        <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-lg py-2' : 'bg-transparent py-4'}`}>
+        <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled || isOpen ? 'bg-white/95 backdrop-blur-md shadow-lg py-2' : 'bg-transparent py-4'}`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
                     <div className="flex-shrink-0 flex items-center">
-                        <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent cursor-pointer">
+                        <span className={`text-2xl font-bold ${isTransparent && transparentTextWhite ? 'text-white' : 'bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent'} cursor-pointer`}>
                             MuscleHub
                         </span>
                     </div>
@@ -41,7 +44,7 @@ const Navbar = () => {
                             <Link
                                 key={link.name}
                                 to={link.href}
-                                className="text-slate-700 hover:text-blue-600 font-medium transition-colors duration-200 text-sm uppercase tracking-wide flex items-center gap-1"
+                                className={`${textColor} ${hoverColor} font-medium transition-colors duration-200 text-sm uppercase tracking-wide flex items-center gap-1`}
                             >
                                 {link.name}
                             </Link>
@@ -59,7 +62,7 @@ const Navbar = () => {
                     <div className="md:hidden flex items-center">
                         <button
                             onClick={() => setIsOpen(!isOpen)}
-                            className="text-slate-700 hover:text-blue-600 focus:outline-none"
+                            className={`${textColor} ${hoverColor} focus:outline-none transition-colors duration-200`}
                         >
                             {isOpen ? <X size={28} /> : <Menu size={28} />}
                         </button>

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
     LayoutDashboard, Users, Dumbbell,
     ClipboardList, MessageSquare, LogOut, Activity, Utensils
@@ -7,6 +8,24 @@ import {
 
 const TrainerSidebar = ({ activePage }) => {
     const navigate = useNavigate();
+    const [alerts, setAlerts] = useState({});
+
+    useEffect(() => {
+        const fetchAlerts = async () => {
+             const auth = JSON.parse(localStorage.getItem('auth'));
+             if (auth) {
+                 try {
+                     const { data } = await axios.get('http://localhost:8080/api/trainer/alerts', { headers: { Authorization: auth } });
+                     setAlerts(data);
+                 } catch (e) {
+                     console.error("Failed to fetch trainer alerts", e);
+                 }
+             }
+        };
+        fetchAlerts();
+        const interval = setInterval(fetchAlerts, 30000);
+        return () => clearInterval(interval);
+    }, []);
 
     const handleLogout = () => {
         localStorage.removeItem('user');
@@ -44,6 +63,13 @@ const TrainerSidebar = ({ activePage }) => {
                     >
                         <item.icon size={20} />
                         {item.label}
+                        
+                        {/* Red Pulse Badge for Pending Actions */}
+                        {item.id === 'schedule' && alerts?.schedule > 0 && (
+                            <div className="ml-auto w-2 h-2 rounded-full bg-red-500 animate-pulse relative">
+                                <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-50"></div>
+                            </div>
+                        )}
                     </Link>
                 ))}
             </nav>

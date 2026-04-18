@@ -20,6 +20,10 @@ public class Supplement {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    private String servingSize;
+    private String dailyFrequency;
+    private String suggestedUse;
+
     @Lob
     @Column(columnDefinition = "LONGTEXT")
     private String image;

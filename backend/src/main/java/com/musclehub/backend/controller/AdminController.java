@@ -22,6 +22,11 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getStats());
     }
 
+    @GetMapping("/alerts")
+    public ResponseEntity<?> getAdminAlerts() {
+        return ResponseEntity.ok(adminService.getAdminAlerts());
+    }
+
     @GetMapping("/admins")
     public ResponseEntity<?> getAdmins() {
         return ResponseEntity.ok(adminService.getAllUsersByRole(User.Role.ADMIN));

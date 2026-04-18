@@ -7,6 +7,7 @@ import axios from 'axios';
 
 const TrainerSchedule = () => {
     const [slots, setSlots] = useState([]);
+    const [allSlots, setAllSlots] = useState([]);
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -19,6 +20,7 @@ const TrainerSchedule = () => {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
     const [selectedDate, setSelectedDate] = useState(getLocalDate());
+    const [calendarMonth, setCalendarMonth] = useState(new Date(getLocalDate()));
 
     const [newSlot, setNewSlot] = useState({
         date: '',
@@ -30,12 +32,14 @@ const TrainerSchedule = () => {
     const fetchData = async () => {
         try {
             const auth = JSON.parse(localStorage.getItem('auth'));
-            const [slotRes, sessRes] = await Promise.all([
+            const [slotRes, sessRes, allSlotRes] = await Promise.all([
                 axios.get('http://localhost:8080/api/trainer/slots', { headers: { Authorization: auth } }),
-                axios.get('http://localhost:8080/api/trainer/sessions', { headers: { Authorization: auth } })
+                axios.get('http://localhost:8080/api/trainer/sessions', { headers: { Authorization: auth } }),
+                axios.get('http://localhost:8080/api/trainer/all-slots', { headers: { Authorization: auth } })
             ]);
             setSlots(slotRes.data);
             setSessions(sessRes.data);
+            setAllSlots(allSlotRes.data);
         } catch (err) {
             console.error("Fetch error:", err);
         } finally {
@@ -51,13 +55,74 @@ const TrainerSchedule = () => {
         e.preventDefault();
         try {
             const auth = JSON.parse(localStorage.getItem('auth'));
+            const startStr = `${newSlot.date}T${newSlot.startTime}:00`;
+            let endStr = `${newSlot.date}T${newSlot.endTime}:00`;
+
+            const startDateTime = new Date(startStr);
+            let endDateTime = new Date(endStr);
+            
+            // SMART LOGIC: Handle midnight cross-over (e.g. 23:00 to 01:00)
             if (newSlot.endTime <= newSlot.startTime) {
-                alert("End time must be after start time.");
+                const endHour = parseInt(newSlot.endTime.split(':')[0], 10);
+                // Gym closes at 01:00 AM. Only 00:xx and 01:xx can be next-day end times.
+                if (endHour <= 1) { 
+                    endDateTime.setDate(endDateTime.getDate() + 1);
+                    // Format correctly back to local string to avoid UTC offset issues
+                    const nextDayStr = new Date(endDateTime.getTime() - (endDateTime.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                    endStr = `${nextDayStr}T${newSlot.endTime}:00`;
+                } else {
+                    alert("Operation Prevented: End Time must be properly structured after Start Time.");
+                    return;
+                }
+            }
+
+            const now = new Date();
+            const diffHoursFromNow = (startDateTime - now) / (1000 * 60 * 60);
+            const durationHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
+
+            if (diffHoursFromNow < 4) {
+                alert("Operation Prevented: Slots must be scheduled at least 4 hours in advance to maintain service quality.");
                 return;
             }
 
-            const startStr = `${newSlot.date}T${newSlot.startTime}:00`;
-            const endStr = `${newSlot.date}T${newSlot.endTime}:00`;
+            if (diffHoursFromNow > 21 * 24) {
+                alert("Operation Prevented: Slots cannot be scheduled more than 3 weeks (21 days) in advance.");
+                return;
+            }
+
+            if (durationHours > 4) {
+                alert("Operation Prevented: Maximum slot duration is limited to 4 hours to ensure rotation efficiency.");
+                return;
+            }
+
+            if (durationHours < 1) {
+                alert("Operation Prevented: Minimum slot duration is 1 hour to ensure substantive training sessions.");
+                return;
+            }
+
+            if (newSlot.capacity > 8) {
+                alert("Operation Prevented: Maximum capacity is limited to 8 members per slot to maintain instructional quality.");
+                return;
+            }
+
+            // Gym Hours Validation: 5 AM to 1 AM (Closed 1 AM - 5 AM)
+            const startHour = startDateTime.getHours();
+            const startMin = startDateTime.getMinutes();
+            const endHour = endDateTime.getHours();
+            const endMin = endDateTime.getMinutes();
+
+            const isTimeInWindow = (h, m) => {
+                // Returns true if time is between 01:01 and 04:59
+                if (h > 1 && h < 5) return true;
+                if (h === 1 && m > 0) return true;
+                return false;
+            };
+
+            // 1 AM is the hard closing limit. Start cannot be 1 AM or later if it's in the closed window.
+            if (isTimeInWindow(startHour, startMin) || isTimeInWindow(endHour, endMin) || (startHour === 1 && startMin === 0)) {
+                alert("Operational Protocol: The facility is closed for maintenance between 01:00 AM and 05:00 AM. Please select a valid time within 05:00 AM - 01:00 AM.");
+                return;
+            }
 
             await axios.post('http://localhost:8080/api/trainer/slots', {
                 start: startStr,
@@ -71,7 +136,8 @@ const TrainerSchedule = () => {
             fetchData();
         } catch (err) {
             console.error(err);
-            alert("Failed to add slot. Please check your inputs.");
+            const errorMsg = err.response?.data?.message || err.response?.data || "Failed to add slot. Please check your inputs.";
+            alert(errorMsg);
         }
     };
 
@@ -110,25 +176,60 @@ const TrainerSchedule = () => {
         e.preventDefault();
         try {
             const auth = JSON.parse(localStorage.getItem('auth'));
+            
+            const startStr = `${editingSlot.date}T${editingSlot.startTime}:00`;
+            let endStr = `${editingSlot.date}T${editingSlot.endTime}:00`;
+            let startDateTime = new Date(startStr);
+            let endDateTime = new Date(endStr);
+
+            // SMART LOGIC: Handle midnight cross-over for updates
             if (editingSlot.endTime <= editingSlot.startTime) {
-                alert("End time must be after start time.");
+                const endHour = parseInt(editingSlot.endTime.split(':')[0], 10);
+                if (endHour <= 1) { 
+                    endDateTime.setDate(endDateTime.getDate() + 1);
+                    const nextDayStr = new Date(endDateTime.getTime() - (endDateTime.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                    endStr = `${nextDayStr}T${editingSlot.endTime}:00`;
+                } else {
+                    alert("Operation Prevented: End time must be properly structured after start time.");
+                    return;
+                }
+            }
+
+            const now = new Date();
+            const diffHoursFromNow = (startDateTime - now) / (1000 * 60 * 60);
+
+            if (diffHoursFromNow > 21 * 24) {
+                alert("Operation Prevented: Slots cannot be scheduled more than 3 weeks (21 days) in advance.");
                 return;
             }
 
-            const startStr = `${editingSlot.date}T${editingSlot.startTime}:00`;
-            const endStr = `${editingSlot.date}T${editingSlot.endTime}:00`;
+            const durationHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
+            if (durationHours > 4) {
+                alert("Operation Prevented: Maximum slot duration is limited to 4 hours.");
+                return;
+            }
+            if (durationHours < 1) {
+                alert("Operation Prevented: Minimum slot duration is 1 hour.");
+                return;
+            }
+
+            if (editingSlot.capacity > 8) {
+                alert("Operation Prevented: Maximum capacity is limited to 8 members per slot.");
+                return;
+            }
 
             await axios.put(`http://localhost:8080/api/trainer/slots/${editingSlot.id}`, {
-                start: startStr,
-                end: endStr,
+                start: editingSlot.bookedCount > 0 ? null : startStr,
+                end: editingSlot.bookedCount > 0 ? null : endStr,
                 capacity: editingSlot.capacity
             }, {
                 headers: { Authorization: auth }
             });
+
             setEditingSlot(null);
             fetchData();
         } catch (err) {
-            alert(err.response?.data || "Update failed");
+            alert(err.response?.data?.message || err.response?.data || "Update failed");
         }
     };
 
@@ -156,6 +257,127 @@ const TrainerSchedule = () => {
 
     const formatDate = (isoString) => {
         return new Date(isoString).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+    };
+
+    const getCapacityOverview = () => {
+        const hourlySlots = [];
+        for (let i = 5; i <= 22; i++) {
+            const startHour = `${String(i).padStart(2, '0')}:00`;
+            const endHour = `${String(i+1).padStart(2, '0')}:00`;
+            
+            const startDateTime = new Date(`${selectedDate}T${startHour}:00`);
+            const endDateTime = new Date(`${selectedDate}T${endHour}:00`);
+
+            const overlappingSlots = allSlots.filter(s => {
+                const sStart = new Date(s.startTime);
+                const sEnd = new Date(s.endTime);
+                return sStart < endDateTime && sEnd > startDateTime;
+            });
+
+            const uniqueTrainers = new Set(overlappingSlots.map(s => s.trainerId));
+            
+            hourlySlots.push({
+                time: `${startHour} - ${endHour}`,
+                bookedTrainers: uniqueTrainers.size,
+                maxCapacity: 5,
+                status: uniqueTrainers.size >= 5 ? 'Fully Booked' : uniqueTrainers.size >= 4 ? 'Filling Fast' : 'Available'
+            });
+        }
+        return hourlySlots.filter(row => row.bookedTrainers > 0);
+    };
+
+    const renderCalendar = () => {
+        const firstDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+        const lastDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0);
+        
+        let days = [];
+        for (let i = 0; i < firstDay.getDay(); i++) {
+            days.push(null);
+        }
+        for (let i = 1; i <= lastDay.getDate(); i++) {
+            days.push(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), i));
+        }
+
+        return (
+            <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 sticky top-8 z-30 mb-8 xl:mb-0">
+                <div className="flex items-center justify-between mb-8">
+                    <button 
+                        onClick={() => {
+                            const newMonth = new Date(calendarMonth);
+                            newMonth.setMonth(newMonth.getMonth() - 1);
+                            setCalendarMonth(newMonth);
+                        }}
+                        className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all shadow-sm shrink-0"
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+                    <div className="text-center">
+                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter whitespace-nowrap">{calendarMonth.toLocaleString('default', { month: 'long' })} {calendarMonth.getFullYear()}</h3>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Calendar Navigation</p>
+                    </div>
+                    <button 
+                        onClick={() => {
+                            const newMonth = new Date(calendarMonth);
+                            newMonth.setMonth(newMonth.getMonth() + 1);
+                            setCalendarMonth(newMonth);
+                        }}
+                        className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all shadow-sm shrink-0"
+                    >
+                        <ChevronRight size={20} />
+                    </button>
+                </div>
+                
+                <div className="grid grid-cols-7 gap-2 mb-4">
+                    {['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map(d => (
+                        <div key={d} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest py-2">
+                            {d}
+                        </div>
+                    ))}
+                </div>
+                
+                <div className="grid grid-cols-7 gap-2">
+                    {days.map((date, i) => {
+                        if (!date) return <div key={`empty-${i}`} className="p-3"></div>;
+                        
+                        const dateStr = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                        const isSelected = selectedDate === dateStr;
+                        const isTodayStr = dateStr === getLocalDate();
+                        const daySlots = slots.filter(s => s.startTime.startsWith(dateStr));
+                        const hasSlots = daySlots.length > 0;
+                        const hasBookings = daySlots.some(s => s.bookedCount > 0);
+                        
+                        return (
+                            <button
+                                key={dateStr}
+                                onClick={() => setSelectedDate(dateStr)}
+                                className={`
+                                    relative p-3 rounded-xl flex flex-col items-center justify-center transition-all w-full outline-none hover:scale-105 active:scale-95
+                                    ${isSelected ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/30 font-black' : 'hover:bg-slate-50 text-slate-600'}
+                                    ${isTodayStr && !isSelected ? 'border-2 border-blue-500 text-blue-600 font-black' : 'font-bold'}
+                                `}
+                            >
+                                <span className={isSelected ? 'text-lg' : 'text-sm'}>{date.getDate()}</span>
+                                <div className="absolute bottom-1 flex gap-1 items-center h-2">
+                                    {hasSlots && !hasBookings && <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-blue-400'}`}></span>}
+                                    {hasBookings && <span className={`w-1.5 h-1.5 rounded-full shadow-sm animate-pulse ${isSelected ? 'bg-emerald-400' : 'bg-emerald-500'}`}></span>}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className="mt-8 space-y-4 pt-6 border-t border-slate-50 bg-slate-50/50 p-6 rounded-3xl">
+                    <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-sm shadow-emerald-500/50"></div>
+                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Active Bookings</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Available Slots</span>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -190,6 +412,47 @@ const TrainerSchedule = () => {
                 </div>
 
                 <div className="flex-1 px-8 pb-12 max-w-[1400px] mx-auto w-full -mt-6 relative z-20">
+                    
+                    {/* Scheduling Protocol Guidelines */}
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-10 bg-white/70 backdrop-blur-md rounded-[2.5rem] p-8 border border-white shadow-2xl flex flex-col md:flex-row gap-8 items-center"
+                    >
+                        <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20 shrink-0">
+                            <Clock size={40} />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Scheduling Protocol</h3>
+                            <p className="text-slate-500 font-medium text-sm leading-relaxed mb-4">Please adhere to the official MuscleHub trainer protocols when managing your availability to ensure a premium experience for all members.</p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                                    Min 1 Hour Slot
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                                    Max 4 Hour Slot
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
+                                    Max 8 Members
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></div>
+                                    4h Advance
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></div>
+                                    Active: 05 AM - 01 AM
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div>
+                                    Max 3 Weeks Ahead
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
 
                 <AnimatePresence>
                     {showForm && (
@@ -212,6 +475,7 @@ const TrainerSchedule = () => {
                                             <input
                                                 type="date"
                                                 min={new Date().toISOString().split('T')[0]}
+                                                max={new Date(new Date().getTime() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                                                 value={newSlot.date}
                                                 onChange={(e) => setNewSlot({ ...newSlot, date: e.target.value })}
                                                 className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
@@ -221,34 +485,37 @@ const TrainerSchedule = () => {
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-slate-400 text-[10px] font-black uppercase mb-2">Start Time</label>
-                                                <input
-                                                    type="time"
-                                                    value={newSlot.startTime}
-                                                    onChange={(e) => setNewSlot({ ...newSlot, startTime: e.target.value })}
-                                                    className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
-                                                    required
-                                                />
+                                                    <input
+                                                        type="time"
+                                                        step="900"
+                                                        value={newSlot.startTime}
+                                                        onChange={(e) => setNewSlot({ ...newSlot, startTime: e.target.value })}
+                                                        className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
+                                                        required
+                                                    />
                                             </div>
                                             <div>
                                                 <label className="block text-slate-400 text-[10px] font-black uppercase mb-2">End Time</label>
-                                                <input
-                                                    type="time"
-                                                    value={newSlot.endTime}
-                                                    onChange={(e) => setNewSlot({ ...newSlot, endTime: e.target.value })}
-                                                    className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
-                                                    required
-                                                />
+                                                    <input
+                                                        type="time"
+                                                        step="900"
+                                                        value={newSlot.endTime}
+                                                        onChange={(e) => setNewSlot({ ...newSlot, endTime: e.target.value })}
+                                                        className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
+                                                        required
+                                                    />
                                             </div>
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-slate-400 text-[10px] font-black uppercase mb-2">Max Capacity</label>
+                                        <label className="block text-slate-400 text-[10px] font-black uppercase mb-2">Max Capacity (Max 8)</label>
                                         <input
                                             type="number"
                                             value={newSlot.capacity}
                                             onChange={(e) => setNewSlot({ ...newSlot, capacity: e.target.value })}
                                             className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
                                             min="1"
+                                            max="8"
                                             required
                                         />
                                     </div>
@@ -284,6 +551,7 @@ const TrainerSchedule = () => {
                                             <input
                                                 type="date"
                                                 min={new Date().toISOString().split('T')[0]}
+                                                max={new Date(new Date().getTime() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                                                 value={editingSlot.date}
                                                 onChange={(e) => setEditingSlot({ ...editingSlot, date: e.target.value })}
                                                 className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
@@ -295,6 +563,7 @@ const TrainerSchedule = () => {
                                                 <label className="block text-slate-400 text-[10px] font-black uppercase mb-2">Start</label>
                                                 <input
                                                     type="time"
+                                                    step="900"
                                                     value={editingSlot.startTime}
                                                     onChange={(e) => setEditingSlot({ ...editingSlot, startTime: e.target.value })}
                                                     className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
@@ -305,6 +574,7 @@ const TrainerSchedule = () => {
                                                 <label className="block text-slate-400 text-[10px] font-black uppercase mb-2">End</label>
                                                 <input
                                                     type="time"
+                                                    step="900"
                                                     value={editingSlot.endTime}
                                                     onChange={(e) => setEditingSlot({ ...editingSlot, endTime: e.target.value })}
                                                     className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
@@ -314,13 +584,14 @@ const TrainerSchedule = () => {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-slate-400 text-[10px] font-black uppercase mb-2">Attendee Capacity</label>
+                                        <label className="block text-slate-400 text-[10px] font-black uppercase mb-2">Attendee Capacity (Up to 8)</label>
                                         <input
                                             type="number"
                                             value={editingSlot.capacity}
                                             onChange={(e) => setEditingSlot({ ...editingSlot, capacity: e.target.value })}
                                             className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
                                             min={editingSlot.bookedCount || 1}
+                                            max="8"
                                             required
                                         />
                                     </div>
@@ -389,65 +660,127 @@ const TrainerSchedule = () => {
                     )}
                 </AnimatePresence>
 
-                <div className="space-y-12">
-                    {/* Date Selector Header */}
-                    <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6 flex flex-col md:flex-row justify-between items-center gap-6">
-                        <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-200">
-                            <button 
-                                onClick={() => {
-                                    const d = new Date(selectedDate);
-                                    d.setDate(d.getDate() - 1);
-                                    setSelectedDate(d.toISOString().split('T')[0]);
-                                }}
-                                className="p-2 hover:bg-white hover:shadow-md rounded-xl transition-all text-slate-400 hover:text-slate-900"
-                            >
-                                <ChevronLeft size={20} />
-                            </button>
-                            <div className="px-6 py-1 text-center min-w-[180px]">
-                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-0.5 flex items-center justify-center gap-1">
-                                    Focus Date {selectedDate === getLocalDate() && <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>}
-                                </p>
-                                <p className="text-lg font-black text-slate-900 leading-none">
-                                    {selectedDate === getLocalDate() ? 'Today' : new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                </p>
-                            </div>
-                            <button 
-                                onClick={() => {
-                                    const d = new Date(selectedDate);
-                                    d.setDate(d.getDate() + 1);
-                                    setSelectedDate(d.toISOString().split('T')[0]);
-                                }}
-                                className="p-2 hover:bg-white hover:shadow-md rounded-xl transition-all text-slate-400 hover:text-slate-900"
-                            >
-                                <ChevronRight size={20} />
-                            </button>
-                        </div>
-
-                        {selectedDate !== getLocalDate() && (
-                            <button
-                                onClick={() => setSelectedDate(getLocalDate())}
-                                className="px-5 py-2 bg-blue-600/10 text-blue-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center gap-2"
-                            >
-                                <Calendar size={14} /> Back to Today
-                            </button>
-                        )}
-
-                        <div className="flex items-center gap-3">
-                            <div className="text-right hidden md:block border-r border-slate-100 pr-4 mr-1">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Slots</p>
-                                <p className="text-sm font-black text-slate-900">{slots.filter(s => s.startTime.startsWith(selectedDate)).length} Slots Today</p>
-                            </div>
-                            <button 
-                                onClick={() => {
-                                    setNewSlot({...newSlot, date: selectedDate});
-                                    setShowForm(true);
-                                }}
-                                className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs hover:bg-black transition-all shadow-lg flex items-center gap-2"
-                            >
-                                <Plus size={16} /> New Slot
-                            </button>
-                        </div>
+                <div className="flex flex-col xl:flex-row gap-10 items-start">
+                    
+                    {/* Left Pane: Interactive Calendar */}
+                    <div className="w-full xl:w-[400px] shrink-0">
+                        {renderCalendar()}
                     </div>
+
+                    {/* Right Pane: Daily Agenda */}
+                    <div className="flex-1 w-full space-y-12">
+                        {/* Daily Header Actions */}
+                        <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 p-8 flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
+                            <div className="flex items-center gap-6">
+                                <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl">
+                                    <Calendar size={32} />
+                                </div>
+                                <div className="min-w-[180px]">
+                                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1 flex items-center gap-2">
+                                        FOCUS DATE {selectedDate === getLocalDate() && <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>}
+                                    </p>
+                                    <p className="text-3xl font-black text-slate-900 leading-none tracking-tighter">
+                                        {selectedDate === getLocalDate() ? 'TODAY' : new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-6">
+                                <div className="text-right hidden sm:block border-r border-slate-100 pr-6 mr-2">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Slots</p>
+                                    <p className="text-xl font-black text-slate-900 tracking-tighter">{slots.filter(s => s.startTime.startsWith(selectedDate)).length} Slots Today</p>
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        setNewSlot({...newSlot, date: selectedDate});
+                                        setShowForm(true);
+                                    }}
+                                    className="bg-blue-600 text-white px-8 py-4 rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 flex items-center gap-2 active:scale-95"
+                                >
+                                    <Plus size={18} /> Deploy Slot
+                                </button>
+                            </div>
+                        </div>
+
+
+
+                    {/* Gym Capacity Overview Table */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="mb-12 bg-white rounded-[2rem] border border-slate-200 shadow-2xl overflow-hidden"
+                    >
+                        <div className="bg-slate-900 px-8 py-5 border-b border-slate-800 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Plus size={20} className="text-emerald-500" />
+                                <h3 className="text-sm font-black text-white uppercase tracking-widest">Gym Area Capacity Monitor</h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Live Facility Feed</span>
+                            </div>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200">
+                                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Time Slot</th>
+                                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Capacity</th>
+                                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Booked Trainers</th>
+                                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Facility Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {getCapacityOverview().length === 0 ? (
+                                        <tr>
+                                            <td colSpan="4" className="py-12 text-center text-slate-400 font-bold italic">
+                                                No trainer bookings registered for the selected date. The facility has full availability.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        getCapacityOverview().map((row, idx) => (
+                                            <tr key={idx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
+                                                <td className="px-8 py-4">
+                                                    <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                                                        <Clock size={14} className="text-slate-300" />
+                                                        {row.time}
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-4">
+                                                    <span className="text-sm font-bold text-slate-600">5 Trainers Max</span>
+                                                </td>
+                                                <td className="px-8 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className={`text-sm font-black ${row.bookedTrainers >= row.maxCapacity ? 'text-red-600' : 'text-slate-900'}`}>
+                                                            {row.bookedTrainers}
+                                                        </span>
+                                                        <div className="flex-1 w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                            <div 
+                                                                className={`h-full transition-all duration-700 ${row.bookedTrainers >= 5 ? 'bg-red-500' : row.bookedTrainers >= 4 ? 'bg-orange-500' : 'bg-emerald-500'}`}
+                                                                style={{ width: `${(row.bookedTrainers / row.maxCapacity) * 100}%` }}
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-4 text-right">
+                                                    <span className={`text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-widest border ${
+                                                        row.status === 'Available' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                        row.status === 'Filling Fast' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                                                        'bg-red-50 text-red-600 border-red-100'
+                                                    }`}>
+                                                        {row.status === 'Available' && '✅ Available'}
+                                                        {row.status === 'Filling Fast' && '⚠️ Filling Fast'}
+                                                        {row.status === 'Fully Booked' && '❌ Fully Booked'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </motion.div>
 
                     {/* Today's Time Slots Grid */}
                     <div className="space-y-4">
@@ -470,16 +803,36 @@ const TrainerSchedule = () => {
                                     .map(slot => (
                                         <div key={slot.id} className="bg-white p-6 rounded-[1.5rem] border border-slate-200 hover:border-blue-500 hover:shadow-xl transition-all group">
                                             <div className="flex justify-between items-start mb-4">
-                                                <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                                                    Slot
-                                                </div>
-                                                <div className="flex gap-1">
-                                                    <button onClick={() => openEditSlot(slot)} className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">
+                                                {slot.bookedCount > 0 ? (
+                                                    <div className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                                                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                                                        Booked
+                                                    </div>
+                                                ) : (
+                                                    <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                                                        Slot
+                                                    </div>
+                                                )}
+                                                <div className="flex gap-1 items-center">
+                                                    {slot.bookedCount > 0 && (
+                                                        <div className="mr-2 p-1.5 bg-emerald-50 text-emerald-600 rounded-lg tooltip-container relative group/lock">
+                                                            <CheckCircle size={14} />
+                                                            <div className="absolute bottom-full right-0 mb-2 w-48 p-3 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded-xl opacity-0 group-hover/lock:opacity-100 transition-opacity pointer-events-none z-50 shadow-2xl">
+                                                                Slot active with members. Time parameters are now locked for synchronization.
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    <button 
+                                                        onClick={() => openEditSlot(slot)} 
+                                                        className={`p-1.5 transition-colors rounded-lg ${slot.bookedCount > 0 ? 'text-blue-500 hover:bg-blue-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50'}`}
+                                                    >
                                                         <Plus className="rotate-45" size={14} />
                                                     </button>
-                                                    <button onClick={() => handleDeleteSlot(slot.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                                                        <Trash2 size={14} />
-                                                    </button>
+                                                    {slot.bookedCount === 0 && (
+                                                        <button onClick={() => handleDeleteSlot(slot.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                             <p className="text-lg font-black text-slate-900 mb-1">
@@ -572,12 +925,31 @@ const TrainerSchedule = () => {
                                                     </td>
                                                     <td className="px-8 py-6 text-right">
                                                         {s.status !== 'COMPLETED' && s.status !== 'MISSING' ? (
-                                                            <button 
-                                                                onClick={() => setCompletingSession(s)}
-                                                                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-black transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
-                                                            >
-                                                                <CheckCircle size={14} /> MARK ACTION
-                                                            </button>
+                                                            <div className="flex flex-col items-end gap-1">
+                                                                {(() => {
+                                                                    const sessionEndTime = s.endTime ? new Date(s.endTime) : new Date(new Date(s.sessionTime).getTime() + 60 * 60 * 1000);
+                                                                    const isPast = new Date() >= sessionEndTime;
+                                                                    
+                                                                    return (
+                                                                        <>
+                                                                            <button 
+                                                                                onClick={() => setCompletingSession(s)}
+                                                                                disabled={!isPast}
+                                                                                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs transition-all shadow-lg active:scale-95 ${
+                                                                                    !isPast 
+                                                                                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
+                                                                                    : 'bg-emerald-600 text-white hover:bg-black shadow-emerald-600/20'
+                                                                                }`}
+                                                                            >
+                                                                                <CheckCircle size={14} /> MARK ACTION
+                                                                            </button>
+                                                                            {!isPast && (
+                                                                                <p className="text-[9px] font-bold text-blue-500 uppercase tracking-tighter">Available after {sessionEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                                                            )}
+                                                                        </>
+                                                                    );
+                                                                })()}
+                                                            </div>
                                                         ) : (
                                                             <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest italic pr-4">Logged</p>
                                                         )}
@@ -590,9 +962,10 @@ const TrainerSchedule = () => {
                         </div>
                     </div>
                 </div>
-                </div>
-
-                <footer className="bg-slate-950 text-slate-400 py-12 px-10 mt-auto w-full flex flex-col items-center relative z-20">
+            </div>
+        </div>
+        
+        <footer className="bg-slate-950 text-slate-400 py-12 px-10 mt-auto w-full flex flex-col items-center relative z-20">
                     <div className="max-w-7xl w-full mx-auto flex flex-col md:flex-row justify-between gap-10 border-b border-slate-800 pb-8">
                         <div className="flex flex-col gap-4 max-w-[200px]">
                             <div className="flex items-center gap-2 text-white font-bold text-xl tracking-tight">

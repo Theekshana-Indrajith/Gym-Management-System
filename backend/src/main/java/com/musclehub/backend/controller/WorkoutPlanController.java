@@ -25,9 +25,10 @@ public class WorkoutPlanController {
     }
 
     @GetMapping("/member/{memberId}")
-    public ResponseEntity<?> getMemberPlans(@PathVariable Long memberId) {
+    public ResponseEntity<?> getMemberPlans(@PathVariable Long memberId,
+            org.springframework.security.core.Authentication authentication) {
         try {
-            return ResponseEntity.ok(workoutPlanService.getMemberPlans(memberId));
+            return ResponseEntity.ok(workoutPlanService.getMemberPlansWithReview(memberId, authentication.getName()));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(null);
@@ -50,6 +51,13 @@ public class WorkoutPlanController {
         return workoutPlanService.createOrAssignPlan(plan, authentication.getName());
     }
 
+    @PostMapping("/{id}/deactivate")
+    public ResponseEntity<?> deactivatePlan(@PathVariable Long id,
+            org.springframework.security.core.Authentication authentication) {
+        workoutPlanService.deactivatePlan(id, authentication.getName());
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePlan(@PathVariable Long id,
             org.springframework.security.core.Authentication authentication) {
@@ -57,11 +65,24 @@ public class WorkoutPlanController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/ai-generate")
-    public ResponseEntity<?> generateAIPlan(@RequestBody Long memberId,
+    @PostMapping("/ai-generate/{memberId}")
+    public ResponseEntity<?> generateAIPlan(@PathVariable Long memberId,
+            @RequestBody java.util.Map<String, Object> updatedBio,
             org.springframework.security.core.Authentication authentication) {
-        WorkoutPlan aiPlan = workoutPlanService.triggerAiGeneration(memberId, authentication.getName());
-        return ResponseEntity.ok(aiPlan);
+        try {
+            WorkoutPlan aiPlan = workoutPlanService.triggerAiGeneration(memberId, updatedBio, authentication.getName());
+            return ResponseEntity.ok(workoutPlanService.mapToMap(aiPlan));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(400).body("Error: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/confirm")
+    public ResponseEntity<?> confirmPlan(@PathVariable Long id,
+            @RequestBody WorkoutPlan updatedPlan,
+            org.springframework.security.core.Authentication authentication) {
+        return ResponseEntity.ok(workoutPlanService.confirmAiPlan(id, updatedPlan, authentication.getName()));
     }
 
     @PostMapping("/log")

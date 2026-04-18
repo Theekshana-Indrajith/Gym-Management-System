@@ -20,4 +20,14 @@ public interface WorkoutPlanRepository extends JpaRepository<WorkoutPlan, Long> 
 
     @Query("SELECT w FROM WorkoutPlan w WHERE w.member.id = :memberId AND w.status = com.musclehub.backend.entity.WorkoutPlan$PlanStatus.CURRENT")
     List<WorkoutPlan> findCurrentPlansByMemberId(Long memberId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @org.springframework.data.jpa.repository.Query("DELETE FROM WorkoutPlan w WHERE w.member.id = :id")
+    void deleteByMemberId(Long id);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @org.springframework.data.jpa.repository.Query("DELETE FROM WorkoutPlan w WHERE w.trainer.id = :id")
+    void deleteByTrainerId(Long id);
 }

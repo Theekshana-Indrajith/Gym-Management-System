@@ -10,7 +10,7 @@ const EquipmentMaintenance = () => {
     const [showAdd, setShowAdd] = useState(false);
     const [repairAsset, setRepairAsset] = useState(null);
     const [formData, setFormData] = useState({
-        name: '', brand: '', serialNumber: '', location: '', cost: '', status: 'WORKING', equipmentCondition: 'EXCELLENT', nextMaintenanceDate: '', alternativeId: '', alternativeName: ''
+        name: '', brand: '', serialNumber: '', location: '', cost: '', status: 'WORKING', equipmentCondition: 'EXCELLENT', nextMaintenanceDate: '', alternativeId: '', alternativeName: '', fallbackExercise: ''
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [isEditing, setIsEditing] = useState(false);
@@ -66,7 +66,7 @@ const EquipmentMaintenance = () => {
                     headers: { Authorization: auth }
                 });
             }
-            setFormData({ name: '', brand: '', serialNumber: '', location: '', cost: '', status: 'WORKING', equipmentCondition: 'EXCELLENT', nextMaintenanceDate: '', alternativeId: '', alternativeName: '' });
+            setFormData({ name: '', brand: '', serialNumber: '', location: '', cost: '', status: 'WORKING', equipmentCondition: 'EXCELLENT', nextMaintenanceDate: '', alternativeId: '', alternativeName: '', fallbackExercise: '' });
             setShowAdd(false);
             setIsEditing(false);
             fetchEquipment();
@@ -86,7 +86,8 @@ const EquipmentMaintenance = () => {
             status: item.status || 'WORKING',
             equipmentCondition: item.equipmentCondition || 'EXCELLENT',
             alternativeId: item.alternativeId || '', 
-            alternativeName: item.alternativeName || '' 
+            alternativeName: item.alternativeName || '',
+            fallbackExercise: item.fallbackExercise || ''
         });
         setIsEditing(true);
         setShowAdd(true);
@@ -183,7 +184,7 @@ const EquipmentMaintenance = () => {
                                 <button 
                                     onClick={() => {
                                         if (showAdd && isEditing) {
-                                            setFormData({ name: '', brand: '', serialNumber: '', location: '', cost: '', status: 'WORKING', equipmentCondition: 'EXCELLENT', nextMaintenanceDate: '', alternativeId: '', alternativeName: '' });
+                                            setFormData({ name: '', brand: '', serialNumber: '', location: '', cost: '', status: 'WORKING', equipmentCondition: 'EXCELLENT', nextMaintenanceDate: '', alternativeId: '', alternativeName: '', fallbackExercise: '' });
                                             setIsEditing(false);
                                         } else {
                                             setShowAdd(!showAdd);
@@ -224,21 +225,36 @@ const EquipmentMaintenance = () => {
                                         <option value="FAIR">Fair</option>
                                         <option value="POOR">Poor</option>
                                     </select>
-                                    <div className="col-span-2 space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Backup Recommendation (Alternative Equipment)</label>
-                                        <select 
-                                            className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 font-bold outline-none" 
-                                            value={formData.alternativeId} 
-                                            onChange={e => {
-                                                const selected = equipment.find(eq => eq.id.toString() === e.target.value);
-                                                setFormData({ ...formData, alternativeId: e.target.value, alternativeName: selected ? selected.name : '' });
-                                            }}
-                                        >
-                                            <option value="">No Alternative (System will guess if broken)</option>
-                                            {equipment.filter(eq => !formData.id || eq.id !== formData.id).map(eq => (
-                                                <option key={eq.id} value={eq.id}>{eq.name} ({eq.brand})</option>
-                                            ))}
-                                        </select>
+                                    <div className="col-span-2 space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Secondary Backup (Alternative Machine)</label>
+                                            <select 
+                                                className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 font-bold outline-none text-sm" 
+                                                value={formData.alternativeId} 
+                                                onChange={e => {
+                                                    const selected = equipment.find(eq => eq.id.toString() === e.target.value);
+                                                    setFormData({ ...formData, alternativeId: e.target.value, alternativeName: selected ? selected.name : '' });
+                                                }}
+                                            >
+                                                <option value="">No Secondary machine</option>
+                                                {equipment.filter(eq => !formData.id || eq.id !== formData.id).map(eq => (
+                                                    <option key={eq.id} value={eq.id}>{eq.name} ({eq.brand})</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 px-1 flex items-center gap-2">
+                                                <Activity size={12} /> Final Fallback (Bodyweight/No-Equipment Alternative)
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="e.g. 50 Jumping Jacks or 10 mins Outdoor Jogging" 
+                                                className="w-full p-4 rounded-2xl bg-blue-50/50 border border-blue-100 font-bold outline-none placeholder:text-blue-300" 
+                                                value={formData.fallbackExercise} 
+                                                onChange={e => setFormData({ ...formData, fallbackExercise: e.target.value })} 
+                                            />
+                                        </div>
                                     </div>
                                     <div className="flex gap-4">
                                         <button type="submit" className="flex-1 bg-blue-600 text-white font-black py-4 rounded-2xl hover:bg-blue-700 transition-colors">Register Asset</button>

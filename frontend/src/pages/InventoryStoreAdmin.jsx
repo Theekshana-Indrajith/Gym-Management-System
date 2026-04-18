@@ -15,7 +15,7 @@ const InventoryStoreAdmin = () => {
     const [selectedSlip, setSelectedSlip] = useState(null);
 
     const [showAdd, setShowAdd] = useState(false);
-    const [formData, setFormData] = useState({ name: '', brand: '', price: '', stock: '', category: 'Protein', description: '', image: '' });
+    const [formData, setFormData] = useState({ name: '', brand: '', price: '', stock: '', category: 'Protein', description: '', image: '', servingSize: '', dailyFrequency: '', suggestedUse: '' });
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState(null);
 
@@ -49,7 +49,7 @@ const InventoryStoreAdmin = () => {
     }, []);
 
     const resetForm = () => {
-        setFormData({ name: '', brand: '', price: '', stock: '', category: 'Protein', description: '', image: '' });
+        setFormData({ name: '', brand: '', price: '', stock: '', category: 'Protein', description: '', image: '', servingSize: '', dailyFrequency: '', suggestedUse: '' });
         setIsEditing(false);
         setEditId(null);
         setShowAdd(false);
@@ -63,7 +63,10 @@ const InventoryStoreAdmin = () => {
             stock: item.stock,
             category: item.category,
             description: item.description || '',
-            image: item.image || ''
+            image: item.image || '',
+            servingSize: item.servingSize || '',
+            dailyFrequency: item.dailyFrequency || '',
+            suggestedUse: item.suggestedUse || ''
         });
         setEditId(item.id);
         setIsEditing(true);
@@ -307,6 +310,25 @@ const InventoryStoreAdmin = () => {
                                         <select className="col-span-full p-4 rounded-xl bg-slate-50 border border-slate-100 font-bold" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
                                             <option>Protein</option><option>Creatine</option><option>Pre-Workout</option><option>Vitamins</option><option>Recovery</option><option>Mass Gainer</option>
                                         </select>
+                                        
+                                        {/* New Insight Fields */}
+                                        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-100 mt-2">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Serving Size</label>
+                                                <input type="text" placeholder="e.g. 1 Scoop - 30g" className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 font-bold" value={formData.servingSize} onChange={e => setFormData({ ...formData, servingSize: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Daily Frequency</label>
+                                                <input type="text" placeholder="e.g. Twice a day" className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 font-bold" value={formData.dailyFrequency} onChange={e => setFormData({ ...formData, dailyFrequency: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Suggested Use</label>
+                                                <input type="text" placeholder="e.g. Pre-workout" className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 font-bold" value={formData.suggestedUse} onChange={e => setFormData({ ...formData, suggestedUse: e.target.value })} />
+                                            </div>
+                                        </div>
+
+                                        <textarea placeholder="Product Description" className="col-span-full p-4 rounded-xl bg-slate-50 border border-slate-100 font-medium min-h-[100px]" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                                        
                                         <button className="col-span-full bg-slate-900 text-white py-4 rounded-xl font-black text-lg hover:bg-black transition-all">
                                             {isEditing ? 'Update Supplement' : 'List Supplement'}
                                         </button>

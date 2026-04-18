@@ -63,6 +63,22 @@ public class NotificationService {
     }
 
     @Transactional
+    public void createAdminNotification(String title, String message, String type) {
+        // Find all admins
+        List<User> admins = userRepository.findAllByRole(User.Role.ADMIN);
+
+        for (User admin : admins) {
+            // Create in-app notification for each admin
+            Notification notification = new Notification();
+            notification.setTitle(title);
+            notification.setMessage(message);
+            notification.setType(type);
+            notification.setUser(admin); // Assign to specific user
+            notificationRepository.save(notification);
+        }
+    }
+
+    @Transactional
     public void markAsRead(Long id) {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Notification not found"));

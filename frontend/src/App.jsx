@@ -7,7 +7,6 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import WorkoutDiet from './pages/WorkoutDiet';
 import Offers from './pages/Offers';
-import Shop from './pages/Shop';
 import About from './pages/About';
 import Contact from './pages/Contact';
 
@@ -54,7 +53,6 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/workout-diet" element={<WorkoutDiet />} />
         <Route path="/offers" element={<Offers />} />
-        <Route path="/shop" element={<Shop />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
 
@@ -69,6 +67,7 @@ function App() {
         <Route path="/admin/meal-plans" element={<MealPlanManagement />} />
         <Route path="/admin/membership" element={<MembershipManagementAdmin />} />
         <Route path="/admin/feedback" element={<FeedbackInquiriesAdmin />} />
+        <Route path="/feedback-inquiries-admin" element={<FeedbackInquiriesAdmin />} />
 
         {/* Trainer Routes */}
         <Route path="/trainer-dashboard" element={<TrainerDashboard />} />

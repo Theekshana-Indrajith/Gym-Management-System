@@ -2,6 +2,7 @@ import React from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 import { Mail, Phone, MapPin } from 'lucide-react';
 
 const Contact = () => {
@@ -42,21 +43,36 @@ const Contact = () => {
                             transition={{ duration: 0.6 }}
                         >
                             <h2 className="text-3xl font-bold mb-6 text-slate-900">Send Us a Message</h2>
-                            <form className="space-y-6">
+                            <form className="space-y-6" onSubmit={async (e) => {
+                                e.preventDefault();
+                                const formData = {
+                                    name: e.target[0].value,
+                                    email: e.target[1].value,
+                                    subject: e.target[2].value,
+                                    message: e.target[3].value
+                                };
+                                try {
+                                    await axios.post('http://localhost:8080/api/public/inquiry', formData);
+                                    alert("Your message has been received! Our team will contact you soon.");
+                                    e.target.reset();
+                                } catch (err) {
+                                    alert("Failed to send message. Please try again later.");
+                                }
+                            }}>
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Name</label>
                                         <input
-                                            type="text"
-                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                            type="text" required
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium"
                                             placeholder="John Doe"
                                         />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Email</label>
                                         <input
-                                            type="email"
-                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                            type="email" required
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium"
                                             placeholder="john@example.com"
                                         />
                                     </div>
@@ -64,16 +80,16 @@ const Contact = () => {
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Subject</label>
                                     <input
-                                        type="text"
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                        type="text" required
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium"
                                         placeholder="How can we help?"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Message</label>
                                     <textarea
-                                        rows="6"
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                        rows="6" required
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium"
                                         placeholder="Your message..."
                                     ></textarea>
                                 </div>
@@ -106,7 +122,7 @@ const Contact = () => {
                                     <div>
                                         <h3 className="font-bold text-slate-900 mb-1">Email</h3>
                                         <p className="text-slate-600">info@musclehub.com</p>
-                                        <p className="text-slate-600">support@musclehub.com</p>
+                                        <p className="text-slate-600">musclehubplus@gmail.com</p>
                                     </div>
                                 </div>
 
@@ -116,8 +132,8 @@ const Contact = () => {
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-slate-900 mb-1">Phone</h3>
-                                        <p className="text-slate-600">+1 (555) 123-4567</p>
-                                        <p className="text-slate-600">+1 (555) 765-4321</p>
+                                        <p className="text-slate-600">+94 11 2558 965</p>
+                                        <p className="text-slate-600">+94 71 5184 898</p>
                                     </div>
                                 </div>
 
@@ -127,8 +143,8 @@ const Contact = () => {
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-slate-900 mb-1">Address</h3>
-                                        <p className="text-slate-600">123 Fitness Street</p>
-                                        <p className="text-slate-600">New York, NY 10001</p>
+                                        <p className="text-slate-600">No. 123, MuscleHub Fitness Center</p>
+                                        <p className="text-slate-600">Colombo 03, Sri Lanka</p>
                                     </div>
                                 </div>
                             </div>
@@ -152,6 +168,35 @@ const Contact = () => {
                             </div>
                         </motion.div>
                     </div>
+
+                    {/* Google Map Section */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8 }}
+                        className="mt-24"
+                    >
+                        <h2 className="text-3xl font-black text-slate-900 mb-8 uppercase italic tracking-tighter text-center">Protocol Headquarters</h2>
+                        <div className="w-full h-[500px] rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white">
+                            <iframe
+                                title="MuscleHub Location"
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3960.782806450893!2d79.96867438730827!3d6.918438169465344!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNsKwNTUnMDYuNCJOIDc5wrA1OCcwNy4yIkU!5e0!3m2!1sen!2slk!4v1711358311000!5m2!1sen!2slk"
+                                width="100%"
+                                height="100%"
+                                style={{ border: 0 }}
+                                allowFullScreen=""
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                            ></iframe>
+                        </div>
+                        <div className="mt-8 flex flex-col items-center">
+                            <div className="bg-slate-900 text-white px-8 py-4 rounded-2xl flex items-center gap-3 shadow-xl">
+                                <MapPin className="text-blue-500" size={20} />
+                                <span className="text-xs font-black uppercase tracking-[0.2em]">MuscleHub Elite HQ • Colombo, Sri Lanka</span>
+                            </div>
+                        </div>
+                    </motion.div>
                 </div>
             </section>
 

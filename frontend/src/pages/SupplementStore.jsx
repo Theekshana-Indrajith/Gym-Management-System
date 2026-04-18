@@ -37,6 +37,7 @@ const SupplementStore = () => {
     const [paymentSlip, setPaymentSlip] = useState(null);
     const [address, setAddress] = useState('');
     const [contact, setContact] = useState('');
+    const [priceRange, setPriceRange] = useState('ALL'); // 'ALL', 'UNDER_5K', '5K_10K', '10K_20K', 'OVER_20K'
 
     const navigate = useNavigate();
 
@@ -354,7 +355,14 @@ const SupplementStore = () => {
     const filteredProducts = products.filter(p => {
         const matchesCategory = activeCategory === 'All Items' || p.category === activeCategory;
         const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.brand.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
+        
+        let matchesPrice = true;
+        if (priceRange === 'UNDER_5K') matchesPrice = p.price < 5000;
+        else if (priceRange === '5K_10K') matchesPrice = p.price >= 5000 && p.price <= 10000;
+        else if (priceRange === '10K_20K') matchesPrice = p.price > 10000 && p.price <= 20000;
+        else if (priceRange === 'OVER_20K') matchesPrice = p.price > 20000;
+
+        return matchesCategory && matchesSearch && matchesPrice;
     });
 
     const handleSupplementRequest = async (e) => {
@@ -533,7 +541,7 @@ const SupplementStore = () => {
 
                         {activeTab === 'shop' && (
                             <>
-                                <nav className="flex gap-4 mb-10 overflow-x-auto pb-2">
+                                <nav className="flex gap-4 mb-4 overflow-x-auto pb-2 scrollbar-hide">
                                     {['All Items', 'Protein', 'Creatine', 'Pre-Workout', 'Vitamins', 'Recovery', 'Mass Gainer'].map((cat, i) => (
                                         <button
                                             key={i}
@@ -544,6 +552,25 @@ const SupplementStore = () => {
                                         </button>
                                     ))}
                                 </nav>
+
+                                <div className="flex items-center gap-3 mb-10 overflow-x-auto pb-2 scrollbar-hide">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2 shrink-0">Price Range:</span>
+                                    {[
+                                        { label: 'All Prices', value: 'ALL' },
+                                        { label: 'Under 5k', value: 'UNDER_5K' },
+                                        { label: '5k - 10k', value: '5K_10K' },
+                                        { label: '10k - 20k', value: '10K_20K' },
+                                        { label: 'Above 20k', value: 'OVER_20K' }
+                                    ].map((range) => (
+                                        <button
+                                            key={range.value}
+                                            onClick={() => setPriceRange(range.value)}
+                                            className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${priceRange === range.value ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300'}`}
+                                        >
+                                            {range.label}
+                                        </button>
+                                    ))}
+                                </div>
 
                                 <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
                                     {filteredProducts.length > 0 ? (
@@ -1141,11 +1168,27 @@ const SupplementStore = () => {
                                         </div>
                                         
                                         <div>
+<<<<<<< Updated upstream
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Supplement Facts</p>
                                             <div className="bg-slate-50 rounded-2xl p-4 grid grid-cols-2 gap-4 border border-slate-100">
                                                 <div>
                                                     <span className="block text-[10px] text-slate-400 font-bold uppercase">Weight/Volume</span>
                                                     <span className="text-sm font-black text-slate-900">Standard Pack</span>
+=======
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Supplement Facts & Usage</p>
+                                            <div className="bg-slate-50 rounded-2xl p-4 grid grid-cols-2 gap-4 border border-slate-100">
+                                                <div>
+                                                    <span className="block text-[10px] text-slate-400 font-bold uppercase">Serving Size</span>
+                                                    <span className="text-sm font-black text-slate-900">{selectedProduct.servingSize || "Standard"}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="block text-[10px] text-slate-400 font-bold uppercase">Frequency</span>
+                                                    <span className="text-sm font-black text-slate-900">{selectedProduct.dailyFrequency || "As needed"}</span>
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <span className="block text-[10px] text-slate-400 font-bold uppercase">Suggested Use</span>
+                                                    <span className="text-sm font-black text-blue-600">{selectedProduct.suggestedUse || "General fitness"}</span>
+>>>>>>> Stashed changes
                                                 </div>
                                                 <div>
                                                     <span className="block text-[10px] text-slate-400 font-bold uppercase">Availability</span>

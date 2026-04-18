@@ -28,7 +28,7 @@ const FeedbackInquiriesAdmin = () => {
         if (activeTab === 'Requests') return i.subject === 'Supplement Request';
         if (activeTab === 'General') return i.subject !== 'Supplement Request';
         return true;
-    });
+    }).sort((a, b) => b.id - a.id);
 
     useEffect(() => { fetchInquiries(); }, []);
 
@@ -70,7 +70,7 @@ const FeedbackInquiriesAdmin = () => {
                 <div className="flex-1 px-8 pb-12 max-w-[1400px] mx-auto w-full relative z-20 mt-6 flex gap-8">
                     <div className="flex-1">
                         <div className="grid grid-cols-2 gap-6 mb-10">
-                            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex justify-between items-center group cursor-pointer hover:shadow-xl transition-all">
+                            {/* <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex justify-between items-center group cursor-pointer hover:shadow-xl transition-all">
                                 <div>
                                     <h4 className="font-black text-slate-900 leading-none mb-1">Average Review</h4>
                                     <p className="text-4xl font-black text-blue-600">4.8 <span className="text-xs text-slate-400">/ 5</span></p>
@@ -78,7 +78,7 @@ const FeedbackInquiriesAdmin = () => {
                                 <div className="flex text-blue-100 group-hover:text-amber-400 transition-colors">
                                     {[1, 2, 3, 4, 5].map(i => <Star key={i} size={24} fill="currentColor" />)}
                                 </div>
-                            </div>
+                            </div> */}
                             <div className="bg-slate-900 p-8 rounded-[2rem] text-white shadow-xl flex justify-between items-center relative overflow-hidden">
                                 <div className="absolute right-[-10%] bottom-[-20%] opacity-20">
                                     <Clock size={120} />
@@ -130,7 +130,7 @@ const FeedbackInquiriesAdmin = () => {
                                                 )}
                                             </div>
                                             <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">
-                                                User: <span className="text-blue-600">@{inquiry.user.username}</span>
+                                                From: <span className="text-blue-600">{inquiry.senderName || (inquiry.username ? `@${inquiry.username}` : 'Guest')}</span>
                                             </p>
                                         </div>
                                     </div>

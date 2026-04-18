@@ -22,6 +22,16 @@ public class TrainerController {
         return ResponseEntity.ok(trainerService.getMyMembers(authentication.getName()));
     }
 
+    @GetMapping("/stats")
+    public ResponseEntity<?> getStats(Authentication authentication) {
+        return ResponseEntity.ok(trainerService.getTrainerStats(authentication.getName()));
+    }
+
+    @GetMapping("/alerts")
+    public ResponseEntity<?> getAlerts(Authentication authentication) {
+        return ResponseEntity.ok(trainerService.getTrainerAlerts(authentication.getName()));
+    }
+
     @PostMapping("/attendance")
     public ResponseEntity<?> markAttendance(@RequestBody Map<String, Object> payload) {
         trainerService.markAttendance(
@@ -142,6 +152,11 @@ public class TrainerController {
         return ResponseEntity.ok(trainerService.getMySlots(authentication.getName()));
     }
 
+    @GetMapping("/all-slots")
+    public ResponseEntity<?> getAllSlots() {
+        return ResponseEntity.ok(trainerService.getAllSlots());
+    }
+
     // Changing path and method to POST to avoid conflict with static resource
     // handling and PUT issues
     @PostMapping("/update-member-fitness")
@@ -177,6 +192,18 @@ public class TrainerController {
 
             trainerService.updateMemberFitnessData(memberId, fitnessData);
             return ResponseEntity.ok("Member fitness profile synchronized successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/send-member-message")
+    public ResponseEntity<?> sendMemberMessage(Authentication authentication, @RequestBody Map<String, Object> payload) {
+        try {
+            Long memberId = Long.valueOf(payload.get("memberId").toString());
+            String message = payload.get("message").toString();
+            trainerService.sendMessageToMember(authentication.getName(), memberId, message);
+            return ResponseEntity.ok("Message successfully dispatched to member");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
