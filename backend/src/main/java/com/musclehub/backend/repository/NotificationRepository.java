@@ -12,4 +12,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     // For global notifications (where user is null)
     List<Notification> findByUserIsNullOrderByCreatedAtDesc();
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @org.springframework.data.jpa.repository.Query("DELETE FROM Notification n WHERE n.user.id = :userId")
+    void deleteByUserId(Long userId);
 }

@@ -39,6 +39,6 @@ public class WorkoutPlan {
     private String planType = "MANUAL"; // MANUAL, AI_GENERATED
 
     public enum PlanStatus {
-        CURRENT, ARCHIVED
+        CURRENT, ARCHIVED, REVIEW_PENDING
     }
 }

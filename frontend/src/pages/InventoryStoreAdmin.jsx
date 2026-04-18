@@ -15,7 +15,7 @@ const InventoryStoreAdmin = () => {
     const [selectedSlip, setSelectedSlip] = useState(null);
 
     const [showAdd, setShowAdd] = useState(false);
-    const [formData, setFormData] = useState({ name: '', brand: '', price: '', stock: '', category: 'Protein', description: '', image: '' });
+    const [formData, setFormData] = useState({ name: '', brand: '', price: '', stock: '', category: 'Protein', description: '', image: '', servingSize: '', dailyFrequency: '', suggestedUse: '' });
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState(null);
 
@@ -49,7 +49,7 @@ const InventoryStoreAdmin = () => {
     }, []);
 
     const resetForm = () => {
-        setFormData({ name: '', brand: '', price: '', stock: '', category: 'Protein', description: '', image: '' });
+        setFormData({ name: '', brand: '', price: '', stock: '', category: 'Protein', description: '', image: '', servingSize: '', dailyFrequency: '', suggestedUse: '' });
         setIsEditing(false);
         setEditId(null);
         setShowAdd(false);
@@ -63,7 +63,10 @@ const InventoryStoreAdmin = () => {
             stock: item.stock,
             category: item.category,
             description: item.description || '',
-            image: item.image || ''
+            image: item.image || '',
+            servingSize: item.servingSize || '',
+            dailyFrequency: item.dailyFrequency || '',
+            suggestedUse: item.suggestedUse || ''
         });
         setEditId(item.id);
         setIsEditing(true);
@@ -307,6 +310,25 @@ const InventoryStoreAdmin = () => {
                                         <select className="col-span-full p-4 rounded-xl bg-slate-50 border border-slate-100 font-bold" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
                                             <option>Protein</option><option>Creatine</option><option>Pre-Workout</option><option>Vitamins</option><option>Recovery</option><option>Mass Gainer</option>
                                         </select>
+                                        
+                                        {/* New Insight Fields */}
+                                        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-100 mt-2">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Serving Size</label>
+                                                <input type="text" placeholder="e.g. 1 Scoop - 30g" className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 font-bold" value={formData.servingSize} onChange={e => setFormData({ ...formData, servingSize: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Daily Frequency</label>
+                                                <input type="text" placeholder="e.g. Twice a day" className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 font-bold" value={formData.dailyFrequency} onChange={e => setFormData({ ...formData, dailyFrequency: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Suggested Use</label>
+                                                <input type="text" placeholder="e.g. Pre-workout" className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 font-bold" value={formData.suggestedUse} onChange={e => setFormData({ ...formData, suggestedUse: e.target.value })} />
+                                            </div>
+                                        </div>
+
+                                        <textarea placeholder="Product Description" className="col-span-full p-4 rounded-xl bg-slate-50 border border-slate-100 font-medium min-h-[100px]" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                                        
                                         <button className="col-span-full bg-slate-900 text-white py-4 rounded-xl font-black text-lg hover:bg-black transition-all">
                                             {isEditing ? 'Update Supplement' : 'List Supplement'}
                                         </button>
@@ -330,15 +352,35 @@ const InventoryStoreAdmin = () => {
                                             <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                                                 <td className="px-8 py-6">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center font-black overflow-hidden relative">
-                                                            {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : <Store size={24} />}
+                                                        <div className="relative group/preview cursor-pointer z-10">
+                                                            <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center font-black overflow-hidden relative">
+                                                                {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform group-hover/preview:scale-110" /> : <Store size={24} />}
+                                                            </div>
+                                                            {item.image && (
+                                                                <div className="absolute left-16 top-1/2 -translate-y-1/2 w-48 h-48 bg-white border border-slate-100 shadow-2xl rounded-3xl opacity-0 invisible group-hover/preview:opacity-100 group-hover/preview:visible transition-all duration-300 z-[200] overflow-hidden pointer-events-none origin-left scale-95 group-hover/preview:scale-100">
+                                                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                                                </div>
+                                                            )}
                                                         </div>
                                                         <div><p className="font-black text-slate-900 leading-none mb-1">{item.name}</p><p className="text-xs text-slate-400">{item.brand}</p></div>
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-6"><span className="text-slate-600 font-bold text-sm bg-slate-100 px-3 py-1 rounded-lg">{item.category}</span></td>
                                                 <td className="px-8 py-6 font-black text-slate-900">LKR {item.price.toLocaleString()}</td>
-                                                <td className="px-8 py-6"><div className={`flex items-center gap-2 font-black text-xs ${item.stock < 10 ? 'text-red-500' : 'text-emerald-500'}`}><div className={`w-2 h-2 rounded-full ${item.stock < 10 ? 'bg-red-500' : 'bg-emerald-500'}`}></div>{item.stock} UNITS {item.stock < 10 && '(RE-ORDER)'}</div></td>
+                                                <td className="px-8 py-6">
+                                                    <div className="flex flex-col gap-2 w-36">
+                                                        <div className={`flex items-center justify-between font-black text-[10px] uppercase tracking-widest ${item.stock < 10 ? 'text-red-600' : item.stock <= 50 ? 'text-orange-500' : 'text-emerald-600'}`}>
+                                                            <span>{item.stock} UNITS</span>
+                                                            {item.stock < 10 && <span className="bg-red-50 px-2 py-0.5 rounded-md">Reorder</span>}
+                                                        </div>
+                                                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                            <div 
+                                                                className={`h-full transition-all duration-1000 ${item.stock < 10 ? 'bg-red-500' : item.stock <= 50 ? 'bg-orange-400' : 'bg-emerald-500'}`}
+                                                                style={{ width: `${Math.min((item.stock / 100) * 100, 100)}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </td>
                                                 <td className="px-8 py-6"><div className="flex gap-2"><button onClick={() => handleEditClick(item)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"><Edit2 size={16} /></button><button onClick={() => handleDelete(item.id)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 size={16} /></button></div></td>
                                             </tr>
                                         ))}
@@ -366,63 +408,94 @@ const InventoryStoreAdmin = () => {
                                                     <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{new Date(order.orderDate).toLocaleString()}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col items-end gap-3">
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusColor(order.status)}`}>{order.status}</span>
-                                                    <select
-                                                        className="bg-slate-900 text-white p-2 px-4 rounded-xl text-xs font-black uppercase tracking-widest appearance-none outline-none cursor-pointer"
-                                                        value={order.status || ''}
-                                                        onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                                                    >
-                                                        <option value="PENDING">PENDING</option>
-                                                        <option value="AWAITING_PAYMENT_APPROVAL">PAYMENT APPROVAL</option>
-                                                        <option value="PAYMENT_VERIFIED">PAYMENT VERIFIED</option>
-                                                        <option value="PREPARED">PREPARED</option>
-                                                        <option value="SHIPPED">SHIPPED</option>
-                                                        <option value="COMPLETED">COMPLETED</option>
-                                                        <option value="CANCELLED">CANCELLED</option>
-                                                    </select>
+                                            <div className="flex flex-col items-end gap-6 w-full max-w-lg">
+                                                {/* Visual Lifecycle Stepper */}
+                                                <div className="w-full flex items-center justify-between px-2 mb-2 relative">
+                                                    {['PENDING', 'AWAITING_PAYMENT_APPROVAL', 'PAYMENT_VERIFIED', 'PREPARED', 'SHIPPED', 'COMPLETED'].map((step, idx, arr) => {
+                                                        const statusIndex = arr.indexOf(order.status);
+                                                        const isCompleted = statusIndex >= idx;
+                                                        const isCurrent = order.status === step;
+                                                        const isCancelled = order.status === 'CANCELLED';
+
+                                                        return (
+                                                            <React.Fragment key={step}>
+                                                                <div className="flex flex-col items-center gap-2 relative z-10 group/step cursor-help">
+                                                                    <div 
+                                                                        className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-500 border-2 ${
+                                                                            isCurrent ? 'bg-blue-600 border-blue-600 text-white scale-125 shadow-lg' :
+                                                                            isCompleted ? 'bg-emerald-500 border-emerald-500 text-white' :
+                                                                            isCancelled ? 'bg-rose-100 border-rose-200 text-rose-500' :
+                                                                            'bg-white border-slate-200 text-slate-300'
+                                                                        }`}
+                                                                    >
+                                                                        {isCompleted && !isCurrent ? <CheckCircle size={12} /> : <span className="text-[10px] font-black">{idx + 1}</span>}
+                                                                    </div>
+                                                                    <div className="absolute top-8 opacity-0 group-hover/step:opacity-100 transition-opacity bg-slate-900 text-white text-[8px] font-black uppercase px-2 py-1 rounded-md whitespace-nowrap z-[100] pointer-events-none">
+                                                                        {step.replace(/_/g, ' ')}
+                                                                    </div>
+                                                                </div>
+                                                                {idx < arr.length - 1 && (
+                                                                    <div className={`flex-1 h-0.5 mx-2 transition-all duration-700 ${statusIndex > idx ? 'bg-emerald-500' : 'bg-slate-100'}`} />
+                                                                )}
+                                                            </React.Fragment>
+                                                        );
+                                                    })}
                                                 </div>
-                                                <div className="flex gap-2">
-                                                    {/* {(order.status === 'PAYMENT_VERIFIED' || order.status === 'PREPARED' || order.status === 'SHIPPED' || order.status === 'COMPLETED') && (
-                                                        <button
-                                                            onClick={() => generateInvoice(order)}
-                                                            className="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg flex items-center gap-2"
-                                                        >
-                                                            <Download size={12} /> Download Invoice
-                                                        </button>
-                                                    )} */}
-                                                    {order.status === 'AWAITING_PAYMENT_APPROVAL' && (
-                                                        <button
-                                                            onClick={() => handleUpdateStatus(order.id, 'PAYMENT_VERIFIED')}
-                                                            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20"
-                                                        >
-                                                            Approve Payment
-                                                        </button>
-                                                    )}
-                                                    {(order.status === 'PENDING' || order.status === 'PAYMENT_VERIFIED') && (
-                                                        <button
-                                                            onClick={() => handleUpdateStatus(order.id, 'PREPARED')}
-                                                            className="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
-                                                        >
-                                                            Mark Prepared
-                                                        </button>
-                                                    )}
-                                                    {order.status === 'PREPARED' && order.deliveryMethod === 'COURIER' && (
-                                                        <button
-                                                            onClick={() => handleUpdateStatus(order.id, 'SHIPPED')}
-                                                            className="bg-purple-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-700 transition-all shadow-lg shadow-purple-500/20"
-                                                        >
-                                                            Mark Shipped
-                                                        </button>
-                                                    )}
-                                                    {order.status !== 'CANCELLED' && order.status !== 'COMPLETED' && (
-                                                        <button
-                                                            onClick={() => handleCancelOrder(order.id)}
-                                                            className="bg-rose-50 text-rose-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-all"
-                                                        >
-                                                            Cancel Order
-                                                        </button>
+
+                                                <div className="flex items-center gap-3 w-full justify-end">
+                                                    {order.status !== 'CANCELLED' && order.status !== 'COMPLETED' ? (
+                                                        <div className="flex gap-3">
+                                                            {/* Intelligent Priority Action Button */}
+                                                            {order.status === 'AWAITING_PAYMENT_APPROVAL' && (
+                                                                <button
+                                                                    onClick={() => handleUpdateStatus(order.id, 'PAYMENT_VERIFIED')}
+                                                                    className="bg-emerald-600 hover:bg-black text-white px-8 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 flex items-center gap-2 active:scale-95"
+                                                                >
+                                                                    <DollarSign size={16} /> VERIFY FINANCIAL SLIP
+                                                                </button>
+                                                            )}
+                                                            { (order.status === 'PENDING' || order.status === 'PAYMENT_VERIFIED') && (
+                                                                <button
+                                                                    onClick={() => handleUpdateStatus(order.id, 'PREPARED')}
+                                                                    className="bg-blue-600 hover:bg-black text-white px-8 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-blue-500/20 flex items-center gap-2 active:scale-95"
+                                                                >
+                                                                    <Package size={16} /> COMMENCE PACKAGING
+                                                                </button>
+                                                            )}
+                                                            {order.status === 'PREPARED' && order.deliveryMethod === 'COURIER' && (
+                                                                <button
+                                                                    onClick={() => handleUpdateStatus(order.id, 'SHIPPED')}
+                                                                    className="bg-purple-600 hover:bg-black text-white px-8 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-purple-500/20 flex items-center gap-2 active:scale-95"
+                                                                >
+                                                                    <Truck size={16} /> DISPATCH TO COURIER
+                                                                </button>
+                                                            )}
+                                                            { (order.status === 'SHIPPED' || (order.status === 'PREPARED' && order.deliveryMethod === 'PICKUP')) && (
+                                                                <button
+                                                                    onClick={() => handleUpdateStatus(order.id, 'COMPLETED')}
+                                                                    className="bg-emerald-600 hover:bg-black text-white px-8 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 flex items-center gap-2 active:scale-95"
+                                                                >
+                                                                    <CheckCircle size={16} /> FINALIZE LIFECYCLE
+                                                                </button>
+                                                            )}
+                                                            
+                                                            <button
+                                                                onClick={() => handleCancelOrder(order.id)}
+                                                                className="bg-rose-50 text-rose-600 px-6 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all active:scale-95"
+                                                            >
+                                                                ABORT
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-4 bg-slate-50 px-6 py-4 rounded-[2rem] border border-slate-100">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${order.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                                                                {order.status === 'COMPLETED' ? <CheckCircle size={18} /> : <X size={18} />}
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Final Outcome</p>
+                                                                <p className={`font-black uppercase tracking-tighter ${order.status === 'COMPLETED' ? 'text-emerald-600' : 'text-rose-600'}`}>{order.status} LOGGED</p>
+                                                            </div>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>

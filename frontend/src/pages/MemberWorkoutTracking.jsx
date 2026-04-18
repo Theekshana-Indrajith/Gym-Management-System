@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-    CheckCircle, Activity, Target, Dumbbell, Send, 
+import {
+    CheckCircle, Activity, Target, Dumbbell, Send,
     RefreshCw, Clock, TrendingUp, Calendar, ArrowRight, AlertTriangle
 } from 'lucide-react';
 import axios from 'axios';
@@ -14,7 +14,7 @@ const MemberWorkoutTracking = () => {
     const [weeklySummary, setWeeklySummary] = useState(null);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
-    const [logStatus, setLogStatus] = useState({}); 
+    const [logStatus, setLogStatus] = useState({});
     const [equipmentStatus, setEquipmentStatus] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     // Generate the last 7 dates for the switcher
@@ -34,7 +34,11 @@ const MemberWorkoutTracking = () => {
         const init = async () => {
             const storedUser = JSON.parse(localStorage.getItem('user'));
             setUser(storedUser);
+<<<<<<< Updated upstream
             
+=======
+
+>>>>>>> Stashed changes
             await fetchData(storedUser.id, selectedDate);
             await fetchEquipmentStatus();
         };
@@ -63,14 +67,14 @@ const MemberWorkoutTracking = () => {
             const plansRes = await axios.get(`http://localhost:8080/api/workout-plans/member/${memberId}`, { headers });
             // Sort all plans by ID or createdDate DESC to ensure we deal with latest first
             const allPlans = (plansRes.data || []).sort((a, b) => b.id - a.id);
-            
+
             // Find the active protocol (CURRENT) - definitely take the one with the highest ID if multiple exist (though logic should prevent it)
             const current = allPlans.find(p => p.status === 'CURRENT');
-            
+
             // History: everything that is ARCHIVED OR not the current one
             const past = allPlans.filter(p => p.id !== (current?.id || -1))
-                                 .sort((a, b) => b.id - a.id);
-            
+                .sort((a, b) => b.id - a.id);
+
             console.log("Verified Current Plan:", current);
             console.log("Verified Past Plans:", past);
 
@@ -80,10 +84,17 @@ const MemberWorkoutTracking = () => {
             // Read Local Storage explicitly keyed by display plan for that date
             if (dateObj) {
                 const selDate = new Date(dateObj);
+<<<<<<< Updated upstream
                 selDate.setHours(0,0,0,0);
                 const disp = allPlans.find(p => {
                     const pd = new Date(p.createdDate);
                     pd.setHours(0,0,0,0);
+=======
+                selDate.setHours(0, 0, 0, 0);
+                const disp = allPlans.find(p => {
+                    const pd = new Date(p.createdDate);
+                    pd.setHours(0, 0, 0, 0);
+>>>>>>> Stashed changes
                     return pd <= selDate;
                 });
 
@@ -99,8 +110,13 @@ const MemberWorkoutTracking = () => {
 
             // 2. Fetch Weekly Summary
             try {
+<<<<<<< Updated upstream
                 const url = current 
                     ? `http://localhost:8080/api/workout-plans/weekly-summary?planId=${current.id}` 
+=======
+                const url = current
+                    ? `http://localhost:8080/api/workout-plans/weekly-summary?planId=${current.id}`
+>>>>>>> Stashed changes
                     : `http://localhost:8080/api/workout-plans/weekly-summary`;
                 const summaryRes = await axios.get(url, { headers });
                 setWeeklySummary(summaryRes.data);
@@ -123,13 +139,18 @@ const MemberWorkoutTracking = () => {
             const parsed = JSON.parse(exerciseStr);
             if (Array.isArray(parsed)) {
                 return parsed.map((ex, index) => {
-                    const statusInfo = equipmentStatus.find(e => e.id.toString() === ex.equipmentId?.toString());
+                    const primaryStatus = equipmentStatus.find(e => e.id.toString() === ex.equipmentId?.toString());
+                    const alternativeId = primaryStatus?.alternativeId;
+                    const altStatus = alternativeId ? equipmentStatus.find(e => e.id.toString() === alternativeId.toString()) : null;
+                    
                     return {
                         id: index,
                         ...ex,
-                        isWorking: statusInfo ? statusInfo.status === 'WORKING' : true,
-                        alternativeName: statusInfo?.alternativeName || 'Consult Trainer',
-                        currentStatus: statusInfo?.status || 'WORKING'
+                        isWorking: primaryStatus ? primaryStatus.status === 'WORKING' : true,
+                        alternativeName: primaryStatus?.alternativeName || 'Consult Trainer',
+                        isAltWorking: altStatus ? altStatus.status === 'WORKING' : (alternativeId ? false : true), // If no ID, assume working (legacy)
+                        fallbackExercise: primaryStatus?.fallbackExercise || 'Strategic Rest / Consult Trainer',
+                        currentStatus: primaryStatus?.status || 'WORKING'
                     };
                 });
             }
@@ -155,7 +176,11 @@ const MemberWorkoutTracking = () => {
         // Validation: Cannot tick for future dates
         if (selectedDate > new Date()) return;
         if (!currentPlan) return;
+<<<<<<< Updated upstream
         
+=======
+
+>>>>>>> Stashed changes
         // Validation: Cannot edit if already logged in DB
         if (isAlreadyLogged(selectedDate)) {
             alert("This session is already recorded in your history and is now locked for integrity.");
@@ -173,7 +198,7 @@ const MemberWorkoutTracking = () => {
 
     const submitDailyLog = async () => {
         if (!currentPlan) return;
-        
+
         // Validation: Cannot log for future
         const today = new Date();
         today.setHours(23, 59, 59, 999);
@@ -202,7 +227,7 @@ const MemberWorkoutTracking = () => {
                 exercisesJson,
                 percentage,
                 logDate: dateStr
-            }, { headers: { Authorization: auth }});
+            }, { headers: { Authorization: auth } });
 
             alert(`Activity for ${selectedDate.toDateString()} successfully logged!`);
             fetchData(user.id);
@@ -226,25 +251,25 @@ const MemberWorkoutTracking = () => {
     return (
         <div className="flex min-h-screen bg-slate-50 font-sans">
             <MemberSidebar activePage="workout-plans" />
-            
+
             <main className="ml-64 flex-1 flex flex-col">
                 <div className="bg-slate-900 px-10 py-16 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-600/20 to-transparent"></div>
                     <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-                        <MemberHeader 
-                            title="Daily Grit & Weekly Glory" 
-                            subtitle="Record daily discipline. Review weekly dominance." 
-                            lightTheme={true} 
+                        <MemberHeader
+                            title="Track Your Progress"
+                            subtitle="Record daily discipline. Review weekly dominance."
+                            lightTheme={true}
                         />
                         <div className="bg-blue-600/10 backdrop-blur-md border border-white/10 px-6 py-4 rounded-3xl">
                             <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Weekly Consistency</div>
-                            <div className="text-3xl font-black text-white">{ (weeklySummary?.averageCompletion || 0).toFixed(1) }%</div>
+                            <div className="text-3xl font-black text-white">{(weeklySummary?.averageCompletion || 0).toFixed(1)}%</div>
                         </div>
                     </div>
                 </div>
 
                 <div className="p-10 max-w-7xl mx-auto w-full space-y-12">
-                    
+
                     {/* Part 1: Daily Discipline */}
                     <div className="space-y-8">
                         <div className="flex items-center gap-4">
@@ -261,11 +286,10 @@ const MemberWorkoutTracking = () => {
                                     <button
                                         key={idx}
                                         onClick={() => setSelectedDate(date)}
-                                        className={`px-6 py-4 rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest transition-all duration-300 min-w-max flex flex-col items-center gap-1 ${
-                                            isSelected 
-                                            ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20 ring-4 ring-blue-500/10' 
-                                            : 'bg-white text-slate-400 border border-slate-100 hover:border-blue-300'
-                                        } ${isFuture ? 'opacity-40 grayscale cursor-not-allowed' : ''}`}
+                                        className={`px-6 py-4 rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest transition-all duration-300 min-w-max flex flex-col items-center gap-1 ${isSelected
+                                                ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20 ring-4 ring-blue-500/10'
+                                                : 'bg-white text-slate-400 border border-slate-100 hover:border-blue-300'
+                                            } ${isFuture ? 'opacity-40 grayscale cursor-not-allowed' : ''}`}
                                     >
                                         <span className="opacity-60">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
                                         <span className="text-sm">{date.getDate()}</span>
@@ -277,7 +301,7 @@ const MemberWorkoutTracking = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             {/* Exercise Checklist */}
                             <div className="lg:col-span-2">
-                                <motion.div 
+                                <motion.div
                                     key={selectedDate.toISOString()}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -301,8 +325,13 @@ const MemberWorkoutTracking = () => {
                                             // Calculate which plan belongs to this date
                                             let allP = [];
                                             if (currentPlan) allP.push(currentPlan);
+<<<<<<< Updated upstream
                                             allP = [...allP, ...history].sort((a,b) => b.id - a.id);
                                             
+=======
+                                            allP = [...allP, ...history].sort((a, b) => b.id - a.id);
+
+>>>>>>> Stashed changes
                                             if (allP.length === 0) {
                                                 return (
                                                     <div className="py-20 text-center">
@@ -313,16 +342,28 @@ const MemberWorkoutTracking = () => {
                                             }
 
                                             const selDate = new Date(selectedDate);
+<<<<<<< Updated upstream
                                             selDate.setHours(0,0,0,0);
                                             
                                             const displayPlan = allP.find(p => {
                                                 const pd = new Date(p.createdDate);
                                                 pd.setHours(0,0,0,0);
+=======
+                                            selDate.setHours(0, 0, 0, 0);
+
+                                            const displayPlan = allP.find(p => {
+                                                const pd = new Date(p.createdDate);
+                                                pd.setHours(0, 0, 0, 0);
+>>>>>>> Stashed changes
                                                 return pd <= selDate;
                                             });
 
                                             if (!displayPlan) {
+<<<<<<< Updated upstream
                                                 const firstPlanDate = new Date(allP[allP.length-1].createdDate);
+=======
+                                                const firstPlanDate = new Date(allP[allP.length - 1].createdDate);
+>>>>>>> Stashed changes
                                                 return (
                                                     <div className="py-20 text-center">
                                                         <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-200">
@@ -330,7 +371,11 @@ const MemberWorkoutTracking = () => {
                                                         </div>
                                                         <h4 className="text-slate-900 font-black uppercase text-sm tracking-widest mb-1">Pre-Protocol Era</h4>
                                                         <p className="text-slate-400 font-bold text-[10px] tracking-widest uppercase leading-relaxed max-w-xs mx-auto">
+<<<<<<< Updated upstream
                                                             Your first plan was initiated on {firstPlanDate.toLocaleDateString()}.<br/>
+=======
+                                                            Your first plan was initiated on {firstPlanDate.toLocaleDateString()}.<br />
+>>>>>>> Stashed changes
                                                             Past records are secured in the Weekly Glory logs.
                                                         </p>
                                                     </div>
@@ -369,6 +414,7 @@ const MemberWorkoutTracking = () => {
                                                     )}
 
                                                     {parseExercises(displayPlan.exercises).map((ex) => (
+<<<<<<< Updated upstream
                                                         <div 
                                                             key={ex.id}
                                                             onClick={() => !isPastPlan && !loggedInDb && handleTick(ex.id)}
@@ -420,6 +466,64 @@ const MemberWorkoutTracking = () => {
                                                                             </motion.div>
                                                                         )}
                                                                     </div>
+=======
+                                                        <div
+                                                            key={ex.id}
+                                                            onClick={() => !isPastPlan && !loggedInDb && handleTick(ex.id)}
+                                                            className={`group flex items-center justify-between p-6 rounded-3xl border-2 transition-all ${(isPastPlan || loggedInDb) ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
+                                                                } ${logStatus[ex.id]
+                                                                    ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500/5'
+                                                                    : 'bg-white border-slate-50 hover:border-blue-100'
+                                                                }`}
+                                                        >
+                                                            <div className="flex items-center gap-5 flex-1">
+                                                                <div className={`w-10 h-10 rounded-2xl border-2 flex items-center justify-center transition-all flex-shrink-0 ${logStatus[ex.id] ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/30' : 'border-slate-100 bg-slate-50'
+                                                                    }`}>
+                                                                    {logStatus[ex.id] && <CheckCircle size={20} />}
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <span className={`text-lg font-black tracking-tight ${logStatus[ex.id] ? 'text-slate-900 line-through opacity-40' : 'text-slate-900'}`}>
+                                                                        {ex.name}
+                                                                    </span>
+                                                                    <div className="flex items-center gap-3 mt-1 flex-wrap">
+                                                                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${!ex.isWorking ? 'bg-red-500 text-white' :
+                                                                                logStatus[ex.id] ? 'bg-slate-100 text-slate-400' : 'bg-blue-50 text-blue-600'}`}>
+                                                                            {ex.equipmentName || 'No Equipment'} {!ex.isWorking && '(BROKEN)'}
+                                                                        </span>
+                                                                        {ex.setsReps && (
+                                                                            <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${logStatus[ex.id] ? 'bg-slate-100 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
+                                                                                {ex.setsReps}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Alternative Recommendation if Broken */}
+                                                                    {!ex.isWorking && (
+                                                                        <motion.div
+                                                                            initial={{ opacity: 0, height: 0 }}
+                                                                            animate={{ opacity: 1, height: 'auto' }}
+                                                                            className={`mt-3 border p-3 rounded-2xl flex items-center gap-3 ${ex.isAltWorking ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100'}`}
+                                                                        >
+                                                                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center animate-pulse ${ex.isAltWorking ? 'bg-amber-500' : 'bg-red-500'} text-white`}>
+                                                                                <AlertTriangle size={12} />
+                                                                            </div>
+                                                                            <div className={`text-[10px] font-bold leading-tight ${ex.isAltWorking ? 'text-amber-700' : 'text-red-700'}`}>
+                                                                                <span className="uppercase tracking-widest block opacity-70">
+                                                                                    {ex.isAltWorking ? 'Strategic Alternate' : 'Final Physical Fallback'}
+                                                                                </span>
+                                                                                {ex.isAltWorking ? (
+                                                                                    <>Use <span className="underline decoration-2">{ex.alternativeName}</span> instead today.</>
+                                                                                ) : (
+                                                                                    <div className="mt-1">
+                                                                                        <span className="text-slate-500 block mb-1">Equipment Unavailable. Perform:</span>
+                                                                                        <span className="text-sm font-black block text-red-600 uppercase tracking-tight">{ex.fallbackExercise}</span>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    )}
+                                                                </div>
+>>>>>>> Stashed changes
                                                             </div>
                                                         </div>
                                                     ))}
@@ -437,6 +541,7 @@ const MemberWorkoutTracking = () => {
                                                 </p>
                                             </div>
                                         )}
+<<<<<<< Updated upstream
                                         <button 
                                             onClick={submitDailyLog}
                                             disabled={isSubmitting || !currentPlan || selectedDate > new Date() || isAlreadyLogged(selectedDate) || (currentPlan && new Date(selectedDate).setHours(0,0,0,0) < new Date(currentPlan.createdDate).setHours(0,0,0,0))}
@@ -444,6 +549,15 @@ const MemberWorkoutTracking = () => {
                                         >
                                             <Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 
                                             {selectedDate > new Date() ? 'Locked (Future)' : (isAlreadyLogged(selectedDate) ? 'Protocol Secured (Logged)' : (currentPlan && new Date(selectedDate).setHours(0,0,0,0) < new Date(currentPlan.createdDate).setHours(0,0,0,0) ? 'Locked (Past Protocol)' : (isSubmitting ? 'Recording Grit...' : `Record Performance`)))}
+=======
+                                        <button
+                                            onClick={submitDailyLog}
+                                            disabled={isSubmitting || !currentPlan || selectedDate > new Date() || isAlreadyLogged(selectedDate) || (currentPlan && new Date(selectedDate).setHours(0, 0, 0, 0) < new Date(currentPlan.createdDate).setHours(0, 0, 0, 0))}
+                                            className="w-full bg-blue-600 text-white py-6 rounded-3xl font-black text-lg flex items-center justify-center gap-3 hover:bg-slate-900 transition-all shadow-xl shadow-blue-500/20 disabled:opacity-50 group"
+                                        >
+                                            <Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                            {selectedDate > new Date() ? 'Locked (Future)' : (isAlreadyLogged(selectedDate) ? 'Protocol Secured (Logged)' : (currentPlan && new Date(selectedDate).setHours(0, 0, 0, 0) < new Date(currentPlan.createdDate).setHours(0, 0, 0, 0) ? 'Locked (Past Protocol)' : (isSubmitting ? 'Recording Grit...' : `Record Performance`)))}
+>>>>>>> Stashed changes
                                         </button>
                                     </div>
                                 </motion.div>
@@ -453,9 +567,9 @@ const MemberWorkoutTracking = () => {
                             <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden flex flex-col justify-between min-h-[400px]">
                                 <div className="relative z-10">
                                     <Target className="text-blue-500 mb-6" size={40} />
-                                    <h3 className="text-3xl font-black leading-none mb-2">ACTIVE<br/>PROTOCOL</h3>
+                                    <h3 className="text-3xl font-black leading-none mb-2">ACTIVE<br />PROTOCOL</h3>
                                     <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] mb-10">Mission Parameters</p>
-                                    
+
                                     <div className="space-y-6">
                                         <div>
                                             <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Strategy</div>
@@ -530,31 +644,31 @@ const MemberWorkoutTracking = () => {
                                         {weeklySummary?.logs && weeklySummary.logs.length > 0 ? (
                                             weeklySummary.logs
                                                 .slice()
-                                                .sort((a,b) => new Date(a.date) - new Date(b.date))
+                                                .sort((a, b) => new Date(a.date) - new Date(b.date))
                                                 .reverse()
                                                 .map((log, i) => (
-                                                <tr key={log.id} className="group hover:bg-slate-50/50 transition-colors">
-                                                    <td className="py-6">
-                                                        <div className="font-black text-slate-900">{log.date}</div>
-                                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{new Date(log.date).toLocaleDateString('en-US', { weekday: 'short' })} Session</div>
-                                                    </td>
-                                                    <td className="py-6">
-                                                        <div className="text-sm font-black text-blue-600 italic tracking-tight">{log.planName || 'Standard Protocol'}</div>
-                                                    </td>
-                                                    <td className="py-6">
-                                                        <div className="flex gap-1">
-                                                            {[1,2,3,4,5].map(dot => (
-                                                                <div key={dot} className={`h-1.5 w-6 rounded-full ${dot <= (log.completionPercentage/20) ? 'bg-blue-500' : 'bg-slate-100'}`}></div>
-                                                            ))}
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-6 text-right">
-                                                        <span className={`font-black text-lg ${log.completionPercentage >= 80 ? 'text-emerald-500' : 'text-slate-900'}`}>
-                                                            {log.completionPercentage.toFixed(0)}%
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))
+                                                    <tr key={log.id} className="group hover:bg-slate-50/50 transition-colors">
+                                                        <td className="py-6">
+                                                            <div className="font-black text-slate-900">{log.date}</div>
+                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{new Date(log.date).toLocaleDateString('en-US', { weekday: 'short' })} Session</div>
+                                                        </td>
+                                                        <td className="py-6">
+                                                            <div className="text-sm font-black text-blue-600 italic tracking-tight">{log.planName || 'Standard Protocol'}</div>
+                                                        </td>
+                                                        <td className="py-6">
+                                                            <div className="flex gap-1">
+                                                                {[1, 2, 3, 4, 5].map(dot => (
+                                                                    <div key={dot} className={`h-1.5 w-6 rounded-full ${dot <= (log.completionPercentage / 20) ? 'bg-blue-500' : 'bg-slate-100'}`}></div>
+                                                                ))}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-6 text-right">
+                                                            <span className={`font-black text-lg ${log.completionPercentage >= 80 ? 'text-emerald-500' : 'text-slate-900'}`}>
+                                                                {log.completionPercentage.toFixed(0)}%
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))
                                         ) : (
                                             <tr>
                                                 <td colSpan="4" className="py-10 text-center font-bold text-slate-300 italic uppercase text-xs tracking-widest">No Recent Combat Logs Found</td>
@@ -578,7 +692,7 @@ const MemberWorkoutTracking = () => {
                                 <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-16">
                                     <div className="max-w-md">
                                         <div className="inline-block px-4 py-1 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest mb-6 border border-white/20">Structural Analysis</div>
-                                        <h3 className="text-5xl font-black tracking-tighter italic leading-none mb-6">INTEL<br/>COMPARISON</h3>
+                                        <h3 className="text-5xl font-black tracking-tighter italic leading-none mb-6">INTEL<br />COMPARISON</h3>
                                         <p className="text-blue-100 font-bold leading-relaxed">Cross-referencing your active protocol against the previous milestone to verify absolute gains.</p>
                                     </div>
 
@@ -601,7 +715,7 @@ const MemberWorkoutTracking = () => {
                                 <Activity size={500} className="absolute right-[-10%] top-[-10%] text-white opacity-5 rotate-12" />
                             </div>
                         )}
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {/* If there are NO archived plans yet */}
                             {history.length === 0 && (
@@ -612,7 +726,7 @@ const MemberWorkoutTracking = () => {
                             )}
 
                             {history.map((plan, idx) => (
-                                <motion.div 
+                                <motion.div
                                     key={plan.id}
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     whileInView={{ opacity: 1, scale: 1 }}
@@ -632,7 +746,7 @@ const MemberWorkoutTracking = () => {
                                     <h4 className="text-2xl font-black text-slate-900 mb-2 italic leading-tight group-hover:text-blue-600 transition-colors">
                                         "{plan.planName}"
                                     </h4>
-                                    
+
                                     <div className="flex items-center gap-2 mb-8">
                                         <span className="w-2 h-2 rounded-full bg-blue-600"></span>
                                         <p className="text-blue-600 text-[10px] font-black uppercase tracking-[0.2em]">{plan.difficulty} Strategy</p>

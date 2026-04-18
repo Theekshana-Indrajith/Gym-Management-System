@@ -18,6 +18,7 @@ public class WorkoutPlanService {
     private final WorkoutPlanRepository workoutPlanRepository;
     private final UserRepository userRepository;
     private final com.musclehub.backend.repository.WorkoutLogRepository workoutLogRepository;
+    private final com.musclehub.backend.repository.EquipmentRepository equipmentRepository;
 
     public User getUserById(Long id) {
         return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
@@ -31,8 +32,22 @@ public class WorkoutPlanService {
     }
 
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getMemberPlans(Long memberId) {
-        return workoutPlanRepository.findByMemberIdWithDetails(memberId).stream()
+    public List<Map<String, Object>> getMemberPlansWithReview(Long memberId, String requesterUsername) {
+        User requester = userRepository.findByUsername(requesterUsername)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        List<WorkoutPlan> allPlans = workoutPlanRepository.findByMemberIdWithDetails(memberId);
+        
+        // If requester is the member, hide plans in review. 
+        // If trainer/admin, show everything.
+        if (requester.getRole() == User.Role.MEMBER && requester.getId().equals(memberId)) {
+            return allPlans.stream()
+                    .filter(p -> p.getStatus() != WorkoutPlan.PlanStatus.REVIEW_PENDING)
+                    .map(this::mapToMap)
+                    .collect(Collectors.toList());
+        }
+        
+        return allPlans.stream()
                 .map(this::mapToMap)
                 .collect(Collectors.toList());
     }
@@ -44,7 +59,7 @@ public class WorkoutPlanService {
                 .collect(Collectors.toList());
     }
 
-    private Map<String, Object> mapToMap(WorkoutPlan plan) {
+    public Map<String, Object> mapToMap(WorkoutPlan plan) {
         Map<String, Object> map = new HashMap<>();
         map.put("id", plan.getId());
         map.put("planName", plan.getPlanName());
@@ -132,7 +147,8 @@ public class WorkoutPlanService {
         workoutPlanRepository.deleteById(id);
     }
 
-    public WorkoutPlan triggerAiGeneration(Long memberId, String trainerUsername) {
+    @org.springframework.transaction.annotation.Transactional
+    public WorkoutPlan triggerAiGeneration(Long memberId, Map<String, Object> updatedBio, String trainerUsername) {
         User trainer = userRepository.findByUsername(trainerUsername)
                 .orElseThrow(() -> new RuntimeException("Trainer not found"));
 
@@ -143,26 +159,200 @@ public class WorkoutPlanService {
         User member = userRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
 
-        // Archive ALL existing active plans for this member to maintain exclusivity
-        List<WorkoutPlan> oldPlans = workoutPlanRepository.findCurrentPlansByMemberId(member.getId());
-        for (WorkoutPlan cp : oldPlans) {
-            cp.setStatus(WorkoutPlan.PlanStatus.ARCHIVED);
-            workoutPlanRepository.save(cp);
+        // Update Member Bio-data if provided
+        if (updatedBio != null) {
+            if (updatedBio.containsKey("age") && updatedBio.get("age") != null) member.setAge(Integer.parseInt(updatedBio.get("age").toString()));
+            if (updatedBio.containsKey("weight") && updatedBio.get("weight") != null) member.setWeight(Double.parseDouble(updatedBio.get("weight").toString()));
+            if (updatedBio.containsKey("height") && updatedBio.get("height") != null) member.setHeight(Double.parseDouble(updatedBio.get("height").toString()));
+            if (updatedBio.containsKey("fitnessGoal")) member.setFitnessGoal(updatedBio.get("fitnessGoal").toString());
+            if (updatedBio.containsKey("healthDetails")) member.setHealthDetails(updatedBio.get("healthDetails").toString());
+            if (updatedBio.containsKey("gender")) member.setGender(updatedBio.get("gender").toString());
+            userRepository.save(member);
         }
 
-        // Placeholder for AI Logic
+        // Call Flask AI Service
+        String workoutExercises = "General Fitness Routine";
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            String url = "http://localhost:5000/predict/exercise";
+            
+            Map<String, Object> request = new HashMap<>();
+            request.put("gender", member.getGender());
+            request.put("age", member.getAge() != null ? member.getAge() : 25);
+            request.put("weight", member.getWeight() != null ? member.getWeight() : 70.0);
+            request.put("height", member.getHeight() != null ? member.getHeight() : 170.0);
+            request.put("fitnessGoal", member.getFitnessGoal());
+            
+            // Parse health details for HBP
+            boolean hasHBP = member.getHealthDetails() != null && 
+                            member.getHealthDetails().toLowerCase().contains("hypertension");
+            request.put("highBloodPressure", hasHBP ? "Yes" : "No");
+
+            Map<String, Object> response = restTemplate.postForObject(url, request, Map.class);
+            if (response != null && response.containsKey("workoutPlan")) {
+                workoutExercises = response.get("workoutPlan").toString();
+                // Convert AI plain-text exercises to structured JSON (enables BROKEN badge + alternate UI)
+                workoutExercises = buildStructuredExercisesJson(workoutExercises);
+            }
+        } catch (Exception e) {
+            System.err.println("AI Service Error: " + e.getMessage());
+            workoutExercises = "Neural Analysis Fallback:\n1. Cardio 20min\n2. Bodyweight Squats 3x12\n3. Pushups 3x10";
+        }
+
         WorkoutPlan aiPlan = new WorkoutPlan();
         aiPlan.setMember(member);
         aiPlan.setTrainer(trainer);
         aiPlan.setPlanName("AI Generated: " + member.getUsername());
         aiPlan.setIsAiGenerated(true);
-        aiPlan.setExercises("Neural Analysis Pending...\n1. Daily Cardio\n2. Strength Training");
-        aiPlan.setGoal("AI Optimized");
+        aiPlan.setExercises(workoutExercises);
+        aiPlan.setGoal(member.getFitnessGoal() != null ? member.getFitnessGoal() : "AI Optimized");
         aiPlan.setDifficulty("ADAPTIVE");
-        aiPlan.setStatus(WorkoutPlan.PlanStatus.CURRENT);
+        aiPlan.setStatus(WorkoutPlan.PlanStatus.REVIEW_PENDING);
         aiPlan.setCreatedDate(java.time.LocalDate.now());
 
         return workoutPlanRepository.save(aiPlan);
+    }
+
+    /**
+     * Converts AI plain-text exercise string into the same structured JSON format
+     * that manual plans use. This lets the existing frontend parseExercises() logic
+     * automatically show the BROKEN badge + STRATEGIC ALTERNATE box for AI plans.
+     *
+     * AI format:  "Leg press 10 3; Barbell bench press 8 3; Treadmill walking 15min 1"
+     * Output JSON: [{name, equipmentId, equipmentName, setsReps}, ...]
+     */
+    private String buildStructuredExercisesJson(String aiExerciseStr) {
+        if (aiExerciseStr == null || aiExerciseStr.isBlank()) return aiExerciseStr;
+
+        // Fetch all gym equipment once for matching
+        java.util.List<com.musclehub.backend.entity.Equipment> allEquipment = equipmentRepository.findAll();
+
+        java.util.List<java.util.Map<String, Object>> structuredList = new java.util.ArrayList<>();
+
+        // AI output is separated by ";"
+        for (String part : aiExerciseStr.split(";")) {
+            part = part.trim();
+            if (part.isEmpty()) continue;
+
+            // Split into tokens to extract exercise name and sets/reps
+            // Rule: last 2 tokens = sets & reps, everything before = exercise name
+            String[] tokens = part.split("\\s+");
+            String exerciseName;
+            String setsReps;
+
+            if (tokens.length >= 3) {
+                setsReps = tokens[tokens.length - 2] + " x " + tokens[tokens.length - 1];
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < tokens.length - 2; i++) {
+                    if (i > 0) sb.append(" ");
+                    sb.append(tokens[i]);
+                }
+                exerciseName = sb.toString();
+            } else if (tokens.length == 2) {
+                exerciseName = tokens[0];
+                setsReps = tokens[1];
+            } else {
+                exerciseName = part;
+                setsReps = "";
+            }
+
+            // Match exercise name to gym equipment using two-tier scoring:
+            // Tier 1: exact substring match (high priority)
+            // Tier 2: word-level overlap (handles "Treadmill walking" ↔ "Treadmill T8000")
+            com.musclehub.backend.entity.Equipment matched = null;
+            int bestScore = 0;
+            for (com.musclehub.backend.entity.Equipment eq : allEquipment) {
+                if (eq.getName() == null) continue;
+                int score = equipmentMatchScore(exerciseName, eq.getName());
+                if (score > bestScore) {
+                    bestScore = score;
+                    matched = eq;
+                }
+            }
+
+            java.util.Map<String, Object> exMap = new java.util.LinkedHashMap<>();
+            exMap.put("name", exerciseName);
+            exMap.put("setsReps", setsReps);
+            if (matched != null) {
+                exMap.put("equipmentId", matched.getId());
+                exMap.put("equipmentName", matched.getName());
+            } else {
+                exMap.put("equipmentId", null);
+                exMap.put("equipmentName", "No Equipment");
+            }
+            structuredList.add(exMap);
+        }
+
+        // Serialize to JSON string (same format manual plans produce)
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            return mapper.writeValueAsString(structuredList);
+        } catch (Exception e) {
+            System.err.println("JSON serialization failed, using raw AI string: " + e.getMessage());
+            return aiExerciseStr; // safe fallback
+        }
+    }
+
+    /**
+     * Scores how well an exercise name matches an equipment name.
+     *
+     * Tier 1 (score 1000+): one string fully contains the other  — exact match.
+     * Tier 2 (score 1–999): shared significant words (length >= 4 chars).
+     *   Each shared word adds its length to the score so longer/rarer words
+     *   carry more weight. "Treadmill" (9) outweighs "Press" (5).
+     *
+     * Examples:
+     *   "Treadmill walking" vs "Treadmill T8000"  → score 9  (word "treadmill")
+     *   "Leg press"         vs "Leg Press Machine" → score 1005 (exact contains)
+     *   "Push ups"          vs "Treadmill T8000"   → score 0  (no overlap)
+     */
+    private int equipmentMatchScore(String exerciseName, String equipmentName) {
+        String exLower = exerciseName.toLowerCase();
+        String eqLower = equipmentName.toLowerCase();
+
+        // Tier 1: exact substring match
+        if (exLower.contains(eqLower) || eqLower.contains(exLower)) {
+            return 1000 + equipmentName.length();
+        }
+
+        // Tier 2: word-level overlap
+        int score = 0;
+        for (String word : eqLower.split("\\s+")) {
+            if (word.length() >= 4 && exLower.contains(word)) {
+                score += word.length();
+            }
+        }
+        for (String word : exLower.split("\\s+")) {
+            if (word.length() >= 4 && eqLower.contains(word)) {
+                score += word.length();
+            }
+        }
+        return score;
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public WorkoutPlan confirmAiPlan(Long planId, WorkoutPlan updatedData, String trainerUsername) {
+        WorkoutPlan plan = workoutPlanRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Plan not found"));
+        
+        if (!plan.getTrainer().getUsername().equals(trainerUsername)) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        // Apply trainer edits
+        if (updatedData.getExercises() != null) plan.setExercises(updatedData.getExercises());
+        if (updatedData.getPlanName() != null) plan.setPlanName(updatedData.getPlanName());
+
+        // Now archive old plans
+        List<WorkoutPlan> oldPlans = workoutPlanRepository.findCurrentPlansByMemberId(plan.getMember().getId());
+        for (WorkoutPlan cp : oldPlans) {
+            cp.setStatus(WorkoutPlan.PlanStatus.ARCHIVED);
+            workoutPlanRepository.save(cp);
+        }
+
+        // Set this one to current
+        plan.setStatus(WorkoutPlan.PlanStatus.CURRENT);
+        return workoutPlanRepository.save(plan);
     }
 
     @Transactional

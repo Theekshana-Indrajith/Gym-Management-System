@@ -71,6 +71,40 @@ const About = () => {
                         </motion.div>
                     </div>
 
+                    {/* Facility Gallery */}
+                    <div className="mt-32">
+                        <div className="text-center mb-16">
+                            <h2 className="text-4xl font-bold mb-4 text-slate-900 text-center">Gallery of Excellence</h2>
+                            <p className="text-slate-500 font-medium max-w-2xl mx-auto">Explore our premium environment and state-of-the-art facilities designed to push your limits.</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <motion.div initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="group relative overflow-hidden rounded-3xl h-64 shadow-xl">
+                                <img src="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=1000&auto=format&fit=crop" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Gym Studio" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                                    <p className="text-white font-bold">Premium Studio</p>
+                                </div>
+                            </motion.div>
+                            <motion.div initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="group relative overflow-hidden rounded-3xl h-64 shadow-xl">
+                                <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1000&auto=format&fit=crop" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Weight Area" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                                    <p className="text-white font-bold">Free Weights Zone</p>
+                                </div>
+                            </motion.div>
+                            <motion.div initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 }} className="group relative overflow-hidden rounded-3xl h-64 shadow-xl">
+                                <img src="https://images.unsplash.com/photo-1593079831268-3381b0db4a77?q=80&w=1000&auto=format&fit=crop" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Cardio Setup" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                                    <p className="text-white font-bold">Cardio Hub</p>
+                                </div>
+                            </motion.div>
+                            <motion.div initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.4 }} className="group relative overflow-hidden rounded-3xl h-64 shadow-xl bg-slate-100">
+                                <img src="https://tse4.mm.bing.net/th/id/OIP.K_L2ln4AqYhKiWl-Ivk9FwHaE6?rs=1&pid=ImgDetMain&o=7&rm=3" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Specialized Gear" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                                    <p className="text-white font-bold">Elite Equipment</p>
+                                </div>
+                            </motion.div>
+                        </div>
+                    </div>
+
                     {/* Values Section */}
                     <div className="mt-24">
                         <h2 className="text-4xl font-bold text-center mb-16 text-slate-900">Our Values</h2>

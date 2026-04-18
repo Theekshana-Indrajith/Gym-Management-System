@@ -25,8 +25,20 @@ public class MealPlanService {
     }
 
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getMemberPlans(Long memberId) {
-        return mealPlanRepository.findByMemberIdWithDetails(memberId).stream()
+    public List<Map<String, Object>> getMemberPlansWithReview(Long memberId, String requesterUsername) {
+        User requester = userRepository.findByUsername(requesterUsername)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        List<MealPlan> allPlans = mealPlanRepository.findByMemberIdWithDetails(memberId);
+        
+        if (requester.getRole() == User.Role.MEMBER && requester.getId().equals(memberId)) {
+            return allPlans.stream()
+                    .filter(p -> !Boolean.TRUE.equals(p.getIsReviewPending()))
+                    .map(this::mapToMap)
+                    .collect(Collectors.toList());
+        }
+        
+        return allPlans.stream()
                 .map(this::mapToMap)
                 .collect(Collectors.toList());
     }
@@ -38,7 +50,7 @@ public class MealPlanService {
                 .collect(Collectors.toList());
     }
 
-    private Map<String, Object> mapToMap(MealPlan plan) {
+    public Map<String, Object> mapToMap(MealPlan plan) {
         Map<String, Object> map = new HashMap<>();
         map.put("id", plan.getId());
         map.put("planName", plan.getPlanName());
@@ -48,6 +60,7 @@ public class MealPlanService {
         map.put("goal", plan.getGoal());
         map.put("isAiGenerated", plan.getIsAiGenerated());
         map.put("isActive", plan.getIsActive());
+        map.put("isReviewPending", plan.getIsReviewPending());
         map.put("createdDate", plan.getCreatedDate() != null ? plan.getCreatedDate().toString() : null);
 
         if (plan.getMember() != null) {
@@ -122,7 +135,8 @@ public class MealPlanService {
         mealPlanRepository.deleteById(id);
     }
 
-    public MealPlan triggerAiGeneration(Long memberId, String trainerUsername) {
+    @Transactional
+    public MealPlan triggerAiGeneration(Long memberId, Map<String, Object> updatedBio, String trainerUsername) {
         User trainer = userRepository.findByUsername(trainerUsername)
                 .orElseThrow(() -> new RuntimeException("Trainer not found"));
 
@@ -133,18 +147,90 @@ public class MealPlanService {
         User member = userRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
 
-        // Placeholder for AI Logic
+        // Update Member Bio-data if provided
+        if (updatedBio != null) {
+            if (updatedBio.containsKey("age") && updatedBio.get("age") != null) member.setAge(Integer.parseInt(updatedBio.get("age").toString()));
+            if (updatedBio.containsKey("weight") && updatedBio.get("weight") != null) member.setWeight(Double.parseDouble(updatedBio.get("weight").toString()));
+            if (updatedBio.containsKey("height") && updatedBio.get("height") != null) member.setHeight(Double.parseDouble(updatedBio.get("height").toString()));
+            if (updatedBio.containsKey("fitnessGoal")) member.setFitnessGoal(updatedBio.get("fitnessGoal").toString());
+            if (updatedBio.containsKey("healthDetails")) member.setHealthDetails(updatedBio.get("healthDetails").toString());
+            if (updatedBio.containsKey("dietType")) {
+                try { member.setDietaryPreference(User.DietaryPreference.valueOf(updatedBio.get("dietType").toString())); } catch (Exception e) {}
+            }
+            if (updatedBio.containsKey("gender")) member.setGender(updatedBio.get("gender").toString());
+            userRepository.save(member);
+        }
+        String dietMeals = "Standard Healthy Meals";
+        String recommendation = "Maintain consistency with your nutrition.";
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            String url = "http://localhost:5000/predict/diet";
+            
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("gender", member.getGender());
+            requestBody.put("age", member.getAge() != null ? member.getAge() : 25);
+            requestBody.put("weight", member.getWeight() != null ? member.getWeight() : 70.0);
+            requestBody.put("height", member.getHeight() != null ? member.getHeight() : 170.0);
+            requestBody.put("fitnessGoal", member.getFitnessGoal());
+            requestBody.put("dietType", member.getDietaryPreference() != null ? member.getDietaryPreference().name() : "NON_VEG");
+            
+            // Parse health details
+            boolean hasHBP = member.getHealthDetails() != null && 
+                            member.getHealthDetails().toLowerCase().contains("hypertension");
+            boolean hasDiabetes = member.getHealthDetails() != null && 
+                                member.getHealthDetails().toLowerCase().contains("diabetes");
+            
+            requestBody.put("highBloodPressure", hasHBP ? "Yes" : "No");
+            requestBody.put("diabetes", hasDiabetes ? "Yes" : "No");
+
+            Map<String, Object> response = restTemplate.postForObject(url, requestBody, Map.class);
+            if (response != null) {
+                if (response.containsKey("dietPlan")) dietMeals = response.get("dietPlan").toString();
+                if (response.containsKey("recommendation")) recommendation = response.get("recommendation").toString();
+            }
+        } catch (Exception e) {
+            System.err.println("AI Diet Service Error: " + e.getMessage());
+            dietMeals = "Fallback: High Protein Diet\nBreakfast: Eggs\nLunch: Chicken & Rice\nDinner: Fish & Veggies";
+        }
+
         MealPlan aiPlan = new MealPlan();
         aiPlan.setMember(member);
         aiPlan.setTrainer(trainer);
         aiPlan.setPlanName("AI Personalized: " + member.getUsername());
         aiPlan.setIsAiGenerated(true);
-        aiPlan.setMeals(
-                "Breakfast: AI Optimized Protein Shake\nLunch: Superfood Salad\nDinner: Lean Protein & Veggie Mix");
-        aiPlan.setDietType("ADAPTIVE (AI)");
-        aiPlan.setDailyCalories(2500.0);
-        aiPlan.setGoal("AI Recommended Optimization");
+        aiPlan.setMeals(dietMeals);
+        aiPlan.setDietType("AI Optimized (" + (member.getDietaryPreference() != null ? member.getDietaryPreference() : "VARIES") + ")");
+        aiPlan.setDailyCalories(2200.0); // Simplified
+        aiPlan.setGoal(recommendation); // Store recommendation in Goal or separate field if available
+        aiPlan.setIsActive(false);
+        aiPlan.setIsReviewPending(true);
 
         return mealPlanRepository.save(aiPlan);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public MealPlan confirmMealPlan(Long planId, MealPlan updatedData, String trainerUsername) {
+        MealPlan plan = mealPlanRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Meal plan not found"));
+
+        if (!plan.getTrainer().getUsername().equals(trainerUsername)) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        // Apply edits
+        if (updatedData.getMeals() != null) plan.setMeals(updatedData.getMeals());
+        if (updatedData.getGoal() != null) plan.setGoal(updatedData.getGoal());
+        if (updatedData.getPlanName() != null) plan.setPlanName(updatedData.getPlanName());
+
+        // Deactivate old plans for this member
+        List<MealPlan> oldPlans = mealPlanRepository.findActivePlansByMemberId(plan.getMember().getId());
+        for (MealPlan op : oldPlans) {
+            op.setIsActive(false);
+            mealPlanRepository.save(op);
+        }
+
+        plan.setIsActive(true);
+        plan.setIsReviewPending(false);
+        return mealPlanRepository.save(plan);
     }
 }

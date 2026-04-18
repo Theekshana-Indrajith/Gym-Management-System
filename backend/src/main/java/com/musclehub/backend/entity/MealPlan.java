@@ -29,6 +29,7 @@ public class MealPlan {
 
     private Double dailyCalories;
     private String dietType; // Keto, Vegan, High Protein
+    @Column(columnDefinition = "TEXT")
     private String goal;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -39,6 +40,7 @@ public class MealPlan {
 
     private Boolean isAiGenerated = false;
     private Boolean isActive = true;
+    private Boolean isReviewPending = false;
 
     private LocalDate createdDate = LocalDate.now();
 }

@@ -38,7 +38,11 @@ const WorkoutPlanManagement = () => {
     const [selectedMember, setSelectedMember] = useState('ALL');
     const [showAIPreview, setShowAIPreview] = useState(false);
     const [selectedAImember, setSelectedAIMember] = useState(null);
+<<<<<<< Updated upstream
+    const [activeTab, setActiveTab] = useState('AI_HUB'); 
+=======
     const [activeTab, setActiveTab] = useState('AI_HUB');
+>>>>>>> Stashed changes
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [pendingPlan, setPendingPlan] = useState(null);
 
@@ -112,6 +116,8 @@ const WorkoutPlanManagement = () => {
 
     const handleCreatePlan = async (e) => {
         e.preventDefault();
+<<<<<<< Updated upstream
+=======
 
         // Validation: Check if exercises are provided
         const validExercises = newPlan.exercises.filter(ex => (ex.isManual ? ex.tempName : ex.name).trim() !== '');
@@ -121,6 +127,7 @@ const WorkoutPlanManagement = () => {
             return;
         }
 
+>>>>>>> Stashed changes
         const formattedExercises = newPlan.exercises.map(ex => {
             const equipment = equipmentList.find(eq => eq.id.toString() === ex.equipmentId.toString());
             return {
@@ -239,18 +246,30 @@ const WorkoutPlanManagement = () => {
                                 <Zap size={18} fill="currentColor" />
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em]">Technical Command Hub</span>
                             </div>
+<<<<<<< Updated upstream
+                            <h1 className="text-4xl font-black text-white tracking-tight">Kinetic <span className="text-blue-500">Sequences</span></h1>
+=======
                             <h1 className="text-4xl font-black text-white tracking-tight">Workout<span className="text-blue-500"> Routine</span></h1>
+>>>>>>> Stashed changes
                         </div>
 
                         {isTrainer && (
                             <div className="flex bg-white/5 backdrop-blur-md p-1 rounded-2xl border border-white/10 shadow-2xl">
+<<<<<<< Updated upstream
+                                <button 
+=======
                                 <button
+>>>>>>> Stashed changes
                                     onClick={() => setActiveTab('AI_HUB')}
                                     className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'AI_HUB' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:text-white'}`}
                                 >
                                     <Sparkles size={14} /> AI Predictor
                                 </button>
+<<<<<<< Updated upstream
+                                <button 
+=======
                                 <button
+>>>>>>> Stashed changes
                                     onClick={() => setActiveTab('MANAGEMENT')}
                                     className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'MANAGEMENT' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                                 >
@@ -259,6 +278,29 @@ const WorkoutPlanManagement = () => {
                             </div>
                         )}
                     </header>
+<<<<<<< Updated upstream
+
+                    <div className="min-h-[70vh]">
+                        <AnimatePresence mode="wait">
+                            {activeTab === 'AI_HUB' && isTrainer ? (
+                                <motion.div 
+                                    key="ai-hub-workout"
+                                    initial={{ opacity: 0, scale: 0.98 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.98 }}
+                                    className="space-y-8"
+                                >
+                                    <div className="bg-gradient-to-br from-blue-600 to-indigo-900 rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden group">
+                                        <div className="relative z-10 max-w-2xl">
+                                            <h2 className="text-4xl font-black mb-4 leading-tight">Neural Training <br /> Architect.</h2>
+                                            <p className="text-blue-100 font-medium text-lg mb-8 opacity-90">Deep-calculate optimal volume, frequency, and load for your athletes based on their current physiological bio-data.</p>
+                                        </div>
+                                        <div className="absolute right-[-5%] top-[-10%] opacity-10 group-hover:scale-110 transition-transform duration-700">
+                                            <BrainCircuit size={400} />
+                                        </div>
+                                    </div>
+
+=======
 
                     <div className="min-h-[70vh]">
                         <AnimatePresence mode="wait">
@@ -280,6 +322,7 @@ const WorkoutPlanManagement = () => {
                                         </div>
                                     </div>
 
+>>>>>>> Stashed changes
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                         {members.map(member => (
                                             <motion.button
@@ -307,7 +350,11 @@ const WorkoutPlanManagement = () => {
                                     </div>
                                 </motion.div>
                             ) : (
+<<<<<<< Updated upstream
+                                <motion.div 
+=======
                                 <motion.div
+>>>>>>> Stashed changes
                                     key="management-workout"
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -317,8 +364,13 @@ const WorkoutPlanManagement = () => {
                                     <div className="flex justify-between items-end mb-8">
                                         <div className="relative">
                                             <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+<<<<<<< Updated upstream
+                                            <select 
+                                                value={selectedMember} 
+=======
                                             <select
                                                 value={selectedMember}
+>>>>>>> Stashed changes
                                                 onChange={e => setSelectedMember(e.target.value)}
                                                 className="bg-white/5 border border-white/10 pl-12 pr-10 py-3 rounded-2xl text-sm font-bold appearance-none focus:outline-none focus:border-blue-500 text-white min-w-[220px]"
                                             >
@@ -327,6 +379,14 @@ const WorkoutPlanManagement = () => {
                                             </select>
                                         </div>
 
+<<<<<<< Updated upstream
+                                        <button 
+                                            onClick={() => setShowCreateModal(true)}
+                                            className="bg-white text-slate-950 px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-2xl hover:bg-blue-600 hover:text-white transition-all transform active:scale-95"
+                                        >
+                                            <Plus size={18} strokeWidth={3} /> Manual Sequence
+                                        </button>
+=======
                                         {isTrainer && (
                                             <button
                                                 onClick={() => setShowCreateModal(true)}
@@ -335,6 +395,7 @@ const WorkoutPlanManagement = () => {
                                                 <Plus size={18} strokeWidth={3} /> Manual Sequence
                                             </button>
                                         )}
+>>>>>>> Stashed changes
                                     </div>
 
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -371,7 +432,11 @@ const WorkoutPlanManagement = () => {
                                                                         </div>
                                                                     ));
                                                                 }
+<<<<<<< Updated upstream
+                                                            } catch (e) {}
+=======
                                                             } catch (e) { }
+>>>>>>> Stashed changes
                                                             return <p className="text-sm text-slate-400">{plan.exercises}</p>;
                                                         })()}
                                                     </div>
@@ -382,7 +447,11 @@ const WorkoutPlanManagement = () => {
                                                         <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest"><Calendar size={14} /> {plan.createdDate}</div>
                                                         <div className="px-3 py-1 bg-white/5 rounded-lg text-[10px] font-black uppercase tracking-widest border border-white/5">{plan.difficulty}</div>
                                                     </div>
+<<<<<<< Updated upstream
+                                                    {plan.status === 'REVIEW_PENDING' && (
+=======
                                                     {isTrainer && plan.status === 'REVIEW_PENDING' && (
+>>>>>>> Stashed changes
                                                         <button onClick={() => { setPendingPlan(plan); setShowReviewModal(true); }} className="bg-amber-500/20 text-amber-500 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-amber-500/30 hover:bg-amber-500 hover:text-white transition-all">Review Protocol</button>
                                                     )}
                                                 </div>
@@ -406,29 +475,45 @@ const WorkoutPlanManagement = () => {
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-md">
                             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-900 w-full max-w-4xl rounded-[3.5rem] p-12 relative shadow-2xl border border-white/10 overflow-y-auto max-h-[90vh]">
                                 <button onClick={() => setShowCreateModal(false)} className="absolute right-8 top-8 text-slate-500 hover:text-white"><X size={28} /></button>
+<<<<<<< Updated upstream
+                                <h2 className="text-4xl font-black mb-10 text-white leading-tight">Technical Manual <br /><span className="text-blue-500">Sequence Entry</span></h2>
+=======
                                 <h2 className="text-4xl font-black mb-10 text-white leading-tight">Technical Manual <br /><span className="text-blue-500"></span></h2>
+>>>>>>> Stashed changes
                                 <form onSubmit={handleCreatePlan} className="space-y-8">
                                     <div className="grid grid-cols-2 gap-8">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black uppercase text-slate-500 px-1">Athlete Selection</label>
+<<<<<<< Updated upstream
+                                            <select className="w-full bg-white/5 p-4 rounded-2xl border border-white/10 text-white font-bold outline-none focus:border-blue-500" value={newPlan.memberId} onChange={e => setNewPlan({...newPlan, memberId: e.target.value})} required>
+=======
                                             <select className="w-full bg-white/5 p-4 rounded-2xl border border-white/10 text-white font-bold outline-none focus:border-blue-500" value={newPlan.memberId} onChange={e => setNewPlan({ ...newPlan, memberId: e.target.value })} required>
+>>>>>>> Stashed changes
                                                 <option value="" className="bg-slate-900">Choose Athlete</option>
                                                 {members.map(m => <option key={m.id} value={m.id} className="bg-slate-900">@{m.username}</option>)}
                                             </select>
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black uppercase text-slate-500 px-1">Load Intensity</label>
+<<<<<<< Updated upstream
+                                            <select className="w-full bg-white/5 p-4 rounded-2xl border border-white/10 text-white font-bold outline-none" value={newPlan.difficulty} onChange={e => setNewPlan({...newPlan, difficulty: e.target.value})}>
+=======
                                             <select className="w-full bg-white/5 p-4 rounded-2xl border border-white/10 text-white font-bold outline-none" value={newPlan.difficulty} onChange={e => setNewPlan({ ...newPlan, difficulty: e.target.value })}>
+>>>>>>> Stashed changes
                                                 <option value="BEGINNER" className="bg-slate-900">Beginner (Adaptation)</option>
                                                 <option value="INTERMEDIATE" className="bg-slate-900">Intermediate (Hypertrophy)</option>
                                                 <option value="ADVANCED" className="bg-slate-900">Advanced (Elite)</option>
                                             </select>
                                         </div>
                                     </div>
-
+                                    
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase text-slate-500 px-1">Protocol Identifier</label>
+<<<<<<< Updated upstream
+                                        <input className="w-full bg-white/5 p-5 rounded-3xl border border-white/10 text-white font-black text-lg outline-none focus:border-blue-500" placeholder="e.g. Posterior Chain Overload" value={newPlan.planName} onChange={e => setNewPlan({...newPlan, planName: e.target.value})} required />
+=======
                                         <input className="w-full bg-white/5 p-5 rounded-3xl border border-white/10 text-white font-black text-lg outline-none focus:border-blue-500" placeholder="e.g. Posterior Chain Overload" value={newPlan.planName} onChange={e => setNewPlan({ ...newPlan, planName: e.target.value })} required />
+>>>>>>> Stashed changes
                                     </div>
 
                                     <div className="space-y-4">
@@ -482,11 +567,19 @@ const WorkoutPlanManagement = () => {
                                 <div className="space-y-6 mb-10">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Regime Identifier</label>
+<<<<<<< Updated upstream
+                                        <input className="w-full bg-white/5 p-4 rounded-2xl border border-white/10 text-white font-black text-lg" value={pendingPlan.planName} onChange={e => setPendingPlan({...pendingPlan, planName: e.target.value})} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Sequence Correction (Raw Data)</label>
+                                        <textarea className="w-full bg-white/5 p-6 rounded-[2rem] border border-white/10 text-white font-medium min-h-[300px] text-sm" value={pendingPlan.exercises} onChange={e => setPendingPlan({...pendingPlan, exercises: e.target.value})} />
+=======
                                         <input className="w-full bg-white/5 p-4 rounded-2xl border border-white/10 text-white font-black text-lg" value={pendingPlan.planName} onChange={e => setPendingPlan({ ...pendingPlan, planName: e.target.value })} />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Sequence Correction (Raw Data)</label>
                                         <textarea className="w-full bg-white/5 p-6 rounded-[2rem] border border-white/10 text-white font-medium min-h-[300px] text-sm" value={pendingPlan.exercises} onChange={e => setPendingPlan({ ...pendingPlan, exercises: e.target.value })} />
+>>>>>>> Stashed changes
                                     </div>
                                 </div>
                                 <div className="flex gap-4">
@@ -504,7 +597,11 @@ const WorkoutPlanManagement = () => {
                         <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-xl">
                             <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900 w-full max-w-lg rounded-[3rem] p-10 border border-white/10">
                                 <div className="flex items-center gap-4 mb-8">
+<<<<<<< Updated upstream
+                                    <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400"><User size={32}/></div>
+=======
                                     <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400"><User size={32} /></div>
+>>>>>>> Stashed changes
                                     <div>
                                         <h3 className="text-2xl font-black text-white">Bio-Engine Check</h3>
                                         <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Athlete Profile - @{selectedAImember.username}</p>
@@ -513,6 +610,50 @@ const WorkoutPlanManagement = () => {
                                 <div className="grid grid-cols-2 gap-4 mb-6">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Age</label>
+<<<<<<< Updated upstream
+                                        <input type="number" className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.age || ''} onChange={e => setSelectedAIMember({...selectedAImember, age: e.target.value})} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Gender</label>
+                                        <input className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.gender || ''} onChange={e => setSelectedAIMember({...selectedAImember, gender: e.target.value})} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Weight (kg)</label>
+                                        <input type="number" className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.weight || ''} onChange={e => setSelectedAIMember({...selectedAImember, weight: e.target.value})} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Height (cm)</label>
+                                        <input type="number" className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.height || ''} onChange={e => setSelectedAIMember({...selectedAImember, height: e.target.value})} />
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-4 mb-10">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Strategic Objective</label>
+                                        <select className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5 outline-none" value={selectedAImember.fitnessGoal || ''} onChange={e => setSelectedAIMember({...selectedAImember, fitnessGoal: e.target.value})}>
+                                            <option value="Weight Loss" className="bg-slate-900">Fat Oxidation (Weight Loss)</option>
+                                            <option value="Weight Gain" className="bg-slate-900">Mass Accrual (Weight Gain)</option>
+                                            <option value="Muscle Hypertrophy" className="bg-slate-900">Muscle Hypertrophy</option>
+                                            <option value="Endurance" className="bg-slate-900">Endurance / Stamina</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Medical Conditions / Injuries</label>
+                                        <textarea className="w-full bg-white/5 p-3 rounded-xl text-white font-medium border border-white/5 h-24 text-sm outline-none focus:border-blue-500 transition-all custom-scrollbar shrink-0" value={selectedAImember.healthDetails || ''} onChange={e => setSelectedAIMember({...selectedAImember, healthDetails: e.target.value})} placeholder="List any limiting health factors..."></textarea>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <button onClick={() => setShowAIPreview(false)} className="flex-1 py-4 border border-white/10 rounded-2xl font-black text-slate-500">Cancel</button>
+                                    <button onClick={triggerAI} disabled={isGenerating} className="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-black shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
+                                        {isGenerating ? 'Computing...' : <><Sparkles size={16}/> Start Optimization</>}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+=======
                                         <input type="number" className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.age || ''} onChange={e => setSelectedAIMember({ ...selectedAImember, age: e.target.value })} />
                                     </div>
                                     <div className="space-y-1">
@@ -555,6 +696,7 @@ const WorkoutPlanManagement = () => {
                     )}
                 </AnimatePresence>
 
+>>>>>>> Stashed changes
             </main>
         </div>
     );

@@ -43,12 +43,15 @@ const MyProfile = () => {
         biceps: '',
         thighs: '',
         healthDetails: '',
-        dietaryPreference: 'NON_VEG',
+        dietaryPreference: '',
         excludedMeatTypes: ''
     });
     const [activeTab, setActiveTab] = useState('basic');
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(true);
+    const [otherHealthDetails, setOtherHealthDetails] = useState('');
+
+    const PREDEFINED_CONDITIONS = ["Hypertension", "Diabetes", "Asthma", "Heart Disease", "Joint Pain / Arthritis", "Lower Back Pain"];
 
     const navigate = useNavigate();
 
@@ -79,6 +82,12 @@ const MyProfile = () => {
                     dietaryPreference: res.data.dietaryPreference || 'NON_VEG',
                     excludedMeatTypes: res.data.excludedMeatTypes || ''
                 });
+
+                if (res.data.healthDetails) {
+                    let hdArr = res.data.healthDetails.split(',').map(s => s.trim()).filter(x => x);
+                    let others = hdArr.filter(c => !["Hypertension", "Diabetes", "Asthma", "Heart Disease", "Joint Pain / Arthritis", "Lower Back Pain"].includes(c));
+                    setOtherHealthDetails(others.join(', '));
+                }
             } catch (err) {
                 console.error("Failed to fetch profile", err);
                 if (err.response && (err.response.status === 401 || err.response.status === 403)) {
@@ -97,11 +106,55 @@ const MyProfile = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleConditionChange = (condition, isChecked) => {
+        let currentConditions = formData.healthDetails ? formData.healthDetails.split(',').map(s => s.trim()).filter(x => x) : [];
+        if (isChecked) {
+            if (!currentConditions.includes(condition)) currentConditions.push(condition);
+        } else {
+            currentConditions = currentConditions.filter(c => c !== condition);
+        }
+        setFormData(prev => ({ ...prev, healthDetails: currentConditions.join(', ') }));
+    };
+
+    const handleOtherConditionChange = (e) => {
+        let val = e.target.value;
+        setOtherHealthDetails(val);
+        
+        let currentConditions = formData.healthDetails ? formData.healthDetails.split(',').map(s => s.trim()).filter(x => x) : [];
+        let predefinedOnly = currentConditions.filter(c => PREDEFINED_CONDITIONS.includes(c));
+        
+        if (val.trim()) {
+            predefinedOnly.push(val);
+        }
+        setFormData(prev => ({ ...prev, healthDetails: predefinedOnly.join(', ') }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMessage('');
 
-        // Validation
+        // Required Fields Validation
+        if (!formData.firstName || !formData.firstName.trim()) {
+            alert("First Name is required.");
+            return;
+        }
+        if (!formData.lastName || !formData.lastName.trim()) {
+            alert("Last Name is required.");
+            return;
+        }
+        if (!formData.phoneNumber || !formData.phoneNumber.trim()) {
+            alert("Phone Number is required.");
+            return;
+        }
+        if (!formData.gender) {
+            alert("Gender is required.");
+            return;
+        }
+        if (!formData.dietaryPreference) {
+            alert("Dietary Preference is required.");
+            return;
+        }
+
         const nameRegex = /^[a-zA-Z\s.-]+$/;
         if (formData.firstName && !nameRegex.test(formData.firstName)) {
             alert("First name cannot contain numbers.");
@@ -245,6 +298,7 @@ const MyProfile = () => {
                                             >
                                                 <option value="">Select Goal</option>
                                                 <option value="Weight Loss">Weight Loss</option>
+                                                <option value="Weight Gain">Weight Gain</option>
                                                 <option value="Muscle Building">Muscle Building</option>
                                                 <option value="Endurance Training">Endurance Training</option>
                                                 <option value="Flexibility">Flexibility / Yoga</option>
@@ -344,6 +398,7 @@ const MyProfile = () => {
                                             onChange={handleChange}
                                             className="w-full px-6 py-4 rounded-3xl border border-slate-200 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all bg-white text-slate-900 font-bold appearance-none"
                                         >
+                                            <option value="" disabled>Select Preference</option>
                                             <option value="NON_VEG">Non-Vegetarian</option>
                                             <option value="VEGETARIAN">Vegetarian (Veg)</option>
                                             <option value="VEGAN">Vegan (Plant Based)</option>
@@ -367,15 +422,39 @@ const MyProfile = () => {
 
                             <div className="space-y-4">
                                 <label className="block text-slate-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                                    <FileText size={16} /> Health Details & Conditions
+                                    <FileText size={16} /> Health Details & Chronic Conditions
                                 </label>
-                                <textarea
-                                    name="healthDetails"
-                                    value={formData.healthDetails}
-                                    onChange={handleChange}
-                                    placeholder="Describe your health status, BMI goals, or any medical conditions..."
-                                    className="w-full p-6 rounded-[2rem] border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all h-40 bg-white font-medium text-slate-700 leading-relaxed"
-                                ></textarea>
+                                <div className="bg-white p-6 rounded-[2rem] border border-slate-200">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                                        {PREDEFINED_CONDITIONS.map((condition) => {
+                                            const isChecked = formData.healthDetails && formData.healthDetails.split(',').map(s => s.trim()).includes(condition);
+                                            return (
+                                                <label key={condition} className="flex items-center gap-3 cursor-pointer group">
+                                                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isChecked ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-300 group-hover:border-blue-400 bg-slate-50'}`}>
+                                                        {isChecked && <CheckCircle size={14} className="stroke-[3]" />}
+                                                    </div>
+                                                    <span className={`text-sm font-bold ${isChecked ? 'text-blue-900' : 'text-slate-600 group-hover:text-slate-900'}`}>{condition}</span>
+                                                    <input 
+                                                        type="checkbox" 
+                                                        className="hidden" 
+                                                        checked={!!isChecked}
+                                                        onChange={(e) => handleConditionChange(condition, e.target.checked)}
+                                                    />
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1 block">Other Conditions / Notes</label>
+                                        <input
+                                            type="text"
+                                            value={otherHealthDetails}
+                                            onChange={handleOtherConditionChange}
+                                            placeholder="e.g. Broken arm 2 years ago, etc."
+                                            className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all bg-slate-50 text-slate-900 font-medium text-sm"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             <button type="submit" className="w-full bg-slate-900 hover:bg-black text-white py-5 rounded-[2rem] font-bold text-lg transition-all shadow-xl hover:scale-[1.02] flex items-center justify-center gap-3 active:scale-95">

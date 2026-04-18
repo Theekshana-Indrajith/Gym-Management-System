@@ -69,10 +69,10 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         // Always reset password to ensure it is hashed correctly
-        admin.setPassword(passwordEncoder.encode("1234"));
+        admin.setPassword(passwordEncoder.encode("123456"));
         userRepository.save(admin);
 
-        System.out.println("Admin user seeded/updated successfully! Password is '1234'");
+        System.out.println("Admin user seeded/updated successfully! Password is '123456'");
 
         // Seed a default member for testing
         if (!userRepository.existsByUsername("member")) {
@@ -92,21 +92,22 @@ public class DataSeeder implements CommandLineRunner {
 
         // Seed default trainers
         String[][] trainersData = {
-                { "trainer", "trainer@musclehub.com", "123" },
-                { "alex_fit", "alex@musclehub.com", "123" },
-                { "sarah_pro", "sarah@musclehub.com", "123" }
+                { "trainer", "trainer@musclehub.com", "123456" },
+                { "alex_fit", "alex@musclehub.com", "123456" },
+                { "sarah_pro", "sarah@musclehub.com", "123456" }
         };
 
         for (String[] tData : trainersData) {
-            if (!userRepository.existsByUsername(tData[0])) {
-                User trainer = new User();
+            User trainer = userRepository.findByUsername(tData[0]).orElse(null);
+            if (trainer == null) {
+                trainer = new User();
                 trainer.setUsername(tData[0]);
                 trainer.setEmail(tData[1]);
-                trainer.setPassword(passwordEncoder.encode(tData[2]));
                 trainer.setRole(User.Role.TRAINER);
-                userRepository.save(trainer);
-                System.out.println("Trainer user '" + tData[0] + "' created with password '123'");
             }
+            trainer.setPassword(passwordEncoder.encode(tData[2]));
+            userRepository.save(trainer);
+            System.out.println("Trainer user '" + tData[0] + "' created/updated with password '123456'");
         }
 
         // Ensure 'member' is assigned to 'trainer' for testing

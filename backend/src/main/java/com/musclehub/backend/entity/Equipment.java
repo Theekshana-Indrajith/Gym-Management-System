@@ -32,6 +32,7 @@ public class Equipment {
     // Alternative Equipment Recommendation (Setup by Admin)
     private Long alternativeId;
     private String alternativeName;
+    private String fallbackExercise; // For no-equipment alternative (e.g. Jumping Jacks)
 
     public enum Status {
         WORKING, BROKEN, UNDER_MAINTENANCE, DEACTIVATED, RETIRED

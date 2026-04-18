@@ -110,7 +110,7 @@ const MembershipManagementAdmin = () => {
                                 <div className="flex items-center gap-2 mb-2 text-emerald-400">
                                     <span className="text-[10px] font-black uppercase tracking-[0.2em] px-2 py-0.5 border border-emerald-400/30 rounded">MUSCLEHUB Core</span>
                                 </div>
-                                <h2 className="text-4xl font-black text-white mb-2 tracking-tight uppercase italic underline decoration-blue-600 underline-offset-8">Legacy Management</h2>
+                                <h2 className="text-4xl font-black text-white mb-2 tracking-tight uppercase italic underline decoration-blue-600 underline-offset-8">Membership Management</h2>
                                 <p className="text-slate-300 font-medium italic mt-4">Control membership tiers and verification protocols.</p>
                             </div>
                             <button
@@ -311,7 +311,7 @@ const MembershipManagementAdmin = () => {
                 {/* Add/Edit Modal */}
                 <AnimatePresence>
                     {showAddPackage && (
-                        <div 
+                        <div
                             className="fixed inset-0 z-[9999] flex items-center justify-center p-6 py-20 overflow-y-auto bg-slate-950/90 backdrop-blur-2xl transition-all cursor-pointer"
                             onClick={closeModal}
                         >
@@ -322,7 +322,7 @@ const MembershipManagementAdmin = () => {
                                 onClick={(e) => e.stopPropagation()}
                                 className="bg-white rounded-[4rem] shadow-2xl w-full max-w-xl overflow-hidden border border-slate-100 relative cursor-default"
                             >
-                                <button 
+                                <button
                                     type="button"
                                     onClick={closeModal}
                                     className="absolute right-10 top-10 w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center hover:bg-red-600 transition-all shadow-xl z-[10000] cursor-pointer"
@@ -396,7 +396,7 @@ const MembershipManagementAdmin = () => {
                                     </div>
 
                                     <div className="flex items-center gap-6 bg-slate-900 p-8 rounded-[3rem] shadow-2xl relative group">
-                                        <div 
+                                        <div
                                             className="relative inline-flex items-center cursor-pointer"
                                             onClick={() => setNewPkg(prev => ({ ...prev, isActive: !prev.isActive }))}
                                         >
