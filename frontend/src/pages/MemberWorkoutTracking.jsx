@@ -34,11 +34,7 @@ const MemberWorkoutTracking = () => {
         const init = async () => {
             const storedUser = JSON.parse(localStorage.getItem('user'));
             setUser(storedUser);
-<<<<<<< Updated upstream
-            
-=======
 
->>>>>>> Stashed changes
             await fetchData(storedUser.id, selectedDate);
             await fetchEquipmentStatus();
         };
@@ -84,17 +80,10 @@ const MemberWorkoutTracking = () => {
             // Read Local Storage explicitly keyed by display plan for that date
             if (dateObj) {
                 const selDate = new Date(dateObj);
-<<<<<<< Updated upstream
-                selDate.setHours(0,0,0,0);
-                const disp = allPlans.find(p => {
-                    const pd = new Date(p.createdDate);
-                    pd.setHours(0,0,0,0);
-=======
                 selDate.setHours(0, 0, 0, 0);
                 const disp = allPlans.find(p => {
                     const pd = new Date(p.createdDate);
                     pd.setHours(0, 0, 0, 0);
->>>>>>> Stashed changes
                     return pd <= selDate;
                 });
 
@@ -110,13 +99,8 @@ const MemberWorkoutTracking = () => {
 
             // 2. Fetch Weekly Summary
             try {
-<<<<<<< Updated upstream
-                const url = current 
-                    ? `http://localhost:8080/api/workout-plans/weekly-summary?planId=${current.id}` 
-=======
                 const url = current
                     ? `http://localhost:8080/api/workout-plans/weekly-summary?planId=${current.id}`
->>>>>>> Stashed changes
                     : `http://localhost:8080/api/workout-plans/weekly-summary`;
                 const summaryRes = await axios.get(url, { headers });
                 setWeeklySummary(summaryRes.data);
@@ -176,11 +160,7 @@ const MemberWorkoutTracking = () => {
         // Validation: Cannot tick for future dates
         if (selectedDate > new Date()) return;
         if (!currentPlan) return;
-<<<<<<< Updated upstream
-        
-=======
 
->>>>>>> Stashed changes
         // Validation: Cannot edit if already logged in DB
         if (isAlreadyLogged(selectedDate)) {
             alert("This session is already recorded in your history and is now locked for integrity.");
@@ -325,13 +305,8 @@ const MemberWorkoutTracking = () => {
                                             // Calculate which plan belongs to this date
                                             let allP = [];
                                             if (currentPlan) allP.push(currentPlan);
-<<<<<<< Updated upstream
-                                            allP = [...allP, ...history].sort((a,b) => b.id - a.id);
-                                            
-=======
                                             allP = [...allP, ...history].sort((a, b) => b.id - a.id);
 
->>>>>>> Stashed changes
                                             if (allP.length === 0) {
                                                 return (
                                                     <div className="py-20 text-center">
@@ -342,28 +317,16 @@ const MemberWorkoutTracking = () => {
                                             }
 
                                             const selDate = new Date(selectedDate);
-<<<<<<< Updated upstream
-                                            selDate.setHours(0,0,0,0);
-                                            
-                                            const displayPlan = allP.find(p => {
-                                                const pd = new Date(p.createdDate);
-                                                pd.setHours(0,0,0,0);
-=======
                                             selDate.setHours(0, 0, 0, 0);
 
                                             const displayPlan = allP.find(p => {
                                                 const pd = new Date(p.createdDate);
                                                 pd.setHours(0, 0, 0, 0);
->>>>>>> Stashed changes
                                                 return pd <= selDate;
                                             });
 
                                             if (!displayPlan) {
-<<<<<<< Updated upstream
-                                                const firstPlanDate = new Date(allP[allP.length-1].createdDate);
-=======
                                                 const firstPlanDate = new Date(allP[allP.length - 1].createdDate);
->>>>>>> Stashed changes
                                                 return (
                                                     <div className="py-20 text-center">
                                                         <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-200">
@@ -371,11 +334,7 @@ const MemberWorkoutTracking = () => {
                                                         </div>
                                                         <h4 className="text-slate-900 font-black uppercase text-sm tracking-widest mb-1">Pre-Protocol Era</h4>
                                                         <p className="text-slate-400 font-bold text-[10px] tracking-widest uppercase leading-relaxed max-w-xs mx-auto">
-<<<<<<< Updated upstream
-                                                            Your first plan was initiated on {firstPlanDate.toLocaleDateString()}.<br/>
-=======
                                                             Your first plan was initiated on {firstPlanDate.toLocaleDateString()}.<br />
->>>>>>> Stashed changes
                                                             Past records are secured in the Weekly Glory logs.
                                                         </p>
                                                     </div>
@@ -414,59 +373,6 @@ const MemberWorkoutTracking = () => {
                                                     )}
 
                                                     {parseExercises(displayPlan.exercises).map((ex) => (
-<<<<<<< Updated upstream
-                                                        <div 
-                                                            key={ex.id}
-                                                            onClick={() => !isPastPlan && !loggedInDb && handleTick(ex.id)}
-                                                            className={`group flex items-center justify-between p-6 rounded-3xl border-2 transition-all ${
-                                                                (isPastPlan || loggedInDb) ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
-                                                            } ${
-                                                                logStatus[ex.id] 
-                                                                ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500/5' 
-                                                                : 'bg-white border-slate-50 hover:border-blue-100'
-                                                            }`}
-                                                        >
-                                                            <div className="flex items-center gap-5 flex-1">
-                                                                <div className={`w-10 h-10 rounded-2xl border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                                                                    logStatus[ex.id] ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/30' : 'border-slate-100 bg-slate-50'
-                                                                }`}>
-                                                                    {logStatus[ex.id] && <CheckCircle size={20} />}
-                                                                </div>
-                                                                    <div className="flex flex-col">
-                                                                        <span className={`text-lg font-black tracking-tight ${logStatus[ex.id] ? 'text-slate-900 line-through opacity-40' : 'text-slate-900'}`}>
-                                                                            {ex.name}
-                                                                        </span>
-                                                                        <div className="flex items-center gap-3 mt-1 flex-wrap">
-                                                                            <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
-                                                                                !ex.isWorking ? 'bg-red-500 text-white' : 
-                                                                                logStatus[ex.id] ? 'bg-slate-100 text-slate-400' : 'bg-blue-50 text-blue-600'}`}>
-                                                                                {ex.equipmentName || 'No Equipment'} {!ex.isWorking && '(BROKEN)'}
-                                                                            </span>
-                                                                            {ex.setsReps && (
-                                                                                <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${logStatus[ex.id] ? 'bg-slate-100 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
-                                                                                    {ex.setsReps}
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                        
-                                                                        {/* Alternative Recommendation if Broken */}
-                                                                        {!ex.isWorking && (
-                                                                            <motion.div 
-                                                                                initial={{ opacity: 0, height: 0 }}
-                                                                                animate={{ opacity: 1, height: 'auto' }}
-                                                                                className="mt-3 bg-red-50 border border-red-100 p-3 rounded-2xl flex items-center gap-3"
-                                                                            >
-                                                                                <div className="w-6 h-6 bg-red-500 text-white rounded-lg flex items-center justify-center animate-pulse">
-                                                                                    <AlertTriangle size={12} />
-                                                                                </div>
-                                                                                <div className="text-[10px] font-bold text-red-700 leading-tight">
-                                                                                    <span className="uppercase tracking-widest block opacity-70">Strategic Alternate</span>
-                                                                                    Use <span className="underline decoration-2">{ex.alternativeName}</span> instead today.
-                                                                                </div>
-                                                                            </motion.div>
-                                                                        )}
-                                                                    </div>
-=======
                                                         <div
                                                             key={ex.id}
                                                             onClick={() => !isPastPlan && !loggedInDb && handleTick(ex.id)}
@@ -523,7 +429,6 @@ const MemberWorkoutTracking = () => {
                                                                         </motion.div>
                                                                     )}
                                                                 </div>
->>>>>>> Stashed changes
                                                             </div>
                                                         </div>
                                                     ))}
@@ -541,15 +446,6 @@ const MemberWorkoutTracking = () => {
                                                 </p>
                                             </div>
                                         )}
-<<<<<<< Updated upstream
-                                        <button 
-                                            onClick={submitDailyLog}
-                                            disabled={isSubmitting || !currentPlan || selectedDate > new Date() || isAlreadyLogged(selectedDate) || (currentPlan && new Date(selectedDate).setHours(0,0,0,0) < new Date(currentPlan.createdDate).setHours(0,0,0,0))}
-                                            className="w-full bg-blue-600 text-white py-6 rounded-3xl font-black text-lg flex items-center justify-center gap-3 hover:bg-slate-900 transition-all shadow-xl shadow-blue-500/20 disabled:opacity-50 group"
-                                        >
-                                            <Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 
-                                            {selectedDate > new Date() ? 'Locked (Future)' : (isAlreadyLogged(selectedDate) ? 'Protocol Secured (Logged)' : (currentPlan && new Date(selectedDate).setHours(0,0,0,0) < new Date(currentPlan.createdDate).setHours(0,0,0,0) ? 'Locked (Past Protocol)' : (isSubmitting ? 'Recording Grit...' : `Record Performance`)))}
-=======
                                         <button
                                             onClick={submitDailyLog}
                                             disabled={isSubmitting || !currentPlan || selectedDate > new Date() || isAlreadyLogged(selectedDate) || (currentPlan && new Date(selectedDate).setHours(0, 0, 0, 0) < new Date(currentPlan.createdDate).setHours(0, 0, 0, 0))}
@@ -557,7 +453,6 @@ const MemberWorkoutTracking = () => {
                                         >
                                             <Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                                             {selectedDate > new Date() ? 'Locked (Future)' : (isAlreadyLogged(selectedDate) ? 'Protocol Secured (Logged)' : (currentPlan && new Date(selectedDate).setHours(0, 0, 0, 0) < new Date(currentPlan.createdDate).setHours(0, 0, 0, 0) ? 'Locked (Past Protocol)' : (isSubmitting ? 'Recording Grit...' : `Record Performance`)))}
->>>>>>> Stashed changes
                                         </button>
                                     </div>
                                 </motion.div>

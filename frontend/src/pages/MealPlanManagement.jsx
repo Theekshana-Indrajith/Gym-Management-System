@@ -19,11 +19,7 @@ const MealPlanManagement = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [supplements, setSupplements] = useState([]);
     const [foodItems, setFoodItems] = useState([]);
-<<<<<<< Updated upstream
-    const [selectedFoods, setSelectedFoods] = useState([]); 
-=======
     const [selectedFoods, setSelectedFoods] = useState([]);
->>>>>>> Stashed changes
     const [selectedMember, setSelectedMember] = useState('ALL');
     const [newPlan, setNewPlan] = useState({
         planName: '', meals: '', dietType: 'BALANCED', goal: '', dailyCalories: 0, memberId: '', supplementId: '', supplementDosage: ''
@@ -31,11 +27,7 @@ const MealPlanManagement = () => {
 
     const [showAIPreview, setShowAIPreview] = useState(false);
     const [selectedAImember, setSelectedAIMember] = useState(null);
-<<<<<<< Updated upstream
-    const [activeTab, setActiveTab] = useState('AI_HUB'); 
-=======
     const [activeTab, setActiveTab] = useState('AI_HUB');
->>>>>>> Stashed changes
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [pendingPlan, setPendingPlan] = useState(null);
 
@@ -108,15 +100,12 @@ const MealPlanManagement = () => {
 
     const handleCreatePlan = async (e) => {
         e.preventDefault();
-<<<<<<< Updated upstream
-=======
 
         if (!newPlan.meals || newPlan.meals.trim().length === 0) {
             alert("Nutritional Error: A dietary regime cannot be empty. Please include meals.");
             return;
         }
 
->>>>>>> Stashed changes
         try {
             const auth = JSON.parse(localStorage.getItem('auth'));
             await axios.post('http://localhost:8080/api/meal-plans', {
@@ -183,11 +172,7 @@ const MealPlanManagement = () => {
 
     const isMember = user?.role === 'MEMBER';
     const isTrainer = user?.role === 'TRAINER';
-<<<<<<< Updated upstream
-    const isPremium = true; 
-=======
     const isPremium = true;
->>>>>>> Stashed changes
 
     return (
         <div className="flex min-h-screen bg-slate-950 font-sans text-slate-200">
@@ -210,21 +195,13 @@ const MealPlanManagement = () => {
 
                         {isTrainer && (
                             <div className="flex bg-white/5 backdrop-blur-md p-1 rounded-2xl border border-white/10 shadow-2xl">
-<<<<<<< Updated upstream
-                                <button 
-=======
                                 <button
->>>>>>> Stashed changes
                                     onClick={() => setActiveTab('AI_HUB')}
                                     className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'AI_HUB' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white'}`}
                                 >
                                     <Sparkles size={14} /> AI Hub
                                 </button>
-<<<<<<< Updated upstream
-                                <button 
-=======
                                 <button
->>>>>>> Stashed changes
                                     onClick={() => setActiveTab('MANAGEMENT')}
                                     className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'MANAGEMENT' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                                 >
@@ -237,11 +214,7 @@ const MealPlanManagement = () => {
                     <div className="min-h-[70vh]">
                         <AnimatePresence mode="wait">
                             {activeTab === 'AI_HUB' && isTrainer ? (
-<<<<<<< Updated upstream
-                                <motion.div 
-=======
                                 <motion.div
->>>>>>> Stashed changes
                                     key="ai-hub"
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -250,11 +223,7 @@ const MealPlanManagement = () => {
                                 >
                                     <div className="bg-gradient-to-br from-emerald-600 to-teal-800 rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden group">
                                         <div className="relative z-10 max-w-2xl">
-<<<<<<< Updated upstream
-                                            <h2 className="text-4xl font-black mb-4 leading-tight">Generate Precision <br /> Nutrition Plans.</h2>
-=======
                                             <h2 className="text-4xl font-black mb-4 leading-tight">Get Personalized Meals <br /></h2>
->>>>>>> Stashed changes
                                             <p className="text-emerald-100 font-medium text-lg mb-8 opacity-90">Select an athlete below to initiate a Bio-Nutritional analysis and generate a 100% personalized dietary regimen.</p>
                                         </div>
                                         <div className="absolute right-[-5%] top-[-10%] opacity-10 group-hover:scale-110 transition-transform duration-700">
@@ -289,11 +258,7 @@ const MealPlanManagement = () => {
                                     </div>
                                 </motion.div>
                             ) : (
-<<<<<<< Updated upstream
-                                <motion.div 
-=======
                                 <motion.div
->>>>>>> Stashed changes
                                     key="management"
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -305,13 +270,8 @@ const MealPlanManagement = () => {
                                         <div className="flex items-center gap-4">
                                             <div className="relative">
                                                 <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-<<<<<<< Updated upstream
-                                                <select 
-                                                    value={selectedMember} 
-=======
                                                 <select
                                                     value={selectedMember}
->>>>>>> Stashed changes
                                                     onChange={e => setSelectedMember(e.target.value)}
                                                     className="bg-white/5 border border-white/10 pl-12 pr-10 py-3 rounded-2xl text-sm font-bold appearance-none focus:outline-none focus:border-emerald-500 text-white min-w-[220px]"
                                                 >
@@ -321,14 +281,6 @@ const MealPlanManagement = () => {
                                             </div>
                                         </div>
 
-<<<<<<< Updated upstream
-                                        <button 
-                                            onClick={() => setShowCreateModal(true)}
-                                            className="bg-white text-slate-950 px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-2xl hover:bg-emerald-500 hover:text-white transition-all transform active:scale-95"
-                                        >
-                                            <Plus size={18} strokeWidth={3} /> Create Manual Diet
-                                        </button>
-=======
                                         {isTrainer && (
                                             <button
                                                 onClick={() => setShowCreateModal(true)}
@@ -337,7 +289,6 @@ const MealPlanManagement = () => {
                                                 <Plus size={18} strokeWidth={3} /> Create Manual Diet
                                             </button>
                                         )}
->>>>>>> Stashed changes
                                     </div>
 
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -374,11 +325,7 @@ const MealPlanManagement = () => {
                                                         <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest"><Calendar size={14} /> {plan.createdDate}</div>
                                                         <div className="flex items-center gap-2 text-orange-400 text-[10px] font-black uppercase tracking-widest"><Flame size={14} /> {plan.dailyCalories} kcal</div>
                                                     </div>
-<<<<<<< Updated upstream
-                                                    {plan.isReviewPending && (
-=======
                                                     {isTrainer && plan.isReviewPending && (
->>>>>>> Stashed changes
                                                         <button onClick={() => { setPendingPlan(plan); setShowReviewModal(true); }} className="bg-amber-500/20 text-amber-500 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-amber-500/30 hover:bg-amber-500 hover:text-white transition-all">Review Draft</button>
                                                     )}
                                                 </div>
@@ -402,17 +349,6 @@ const MealPlanManagement = () => {
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-md">
                             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-900 w-full max-w-[900px] rounded-[3rem] p-12 relative shadow-2xl border border-white/10 overflow-y-auto max-h-[90vh]">
                                 <button onClick={() => setShowCreateModal(false)} className="absolute right-8 top-8 text-slate-500 hover:text-white"><X size={28} /></button>
-<<<<<<< Updated upstream
-                                <h2 className="text-4xl font-black mb-10 text-white">Manual <span className="text-emerald-500">Regimen Entry</span></h2>
-                                <form onSubmit={handleCreatePlan} className="space-y-8">
-                                    <div className="grid grid-cols-2 gap-8">
-                                        <div className="space-y-6">
-                                            <select className="w-full bg-white/5 p-4 rounded-2xl border border-white/10 text-white font-bold outline-none focus:border-emerald-500" value={newPlan.memberId} onChange={e => setNewPlan({...newPlan, memberId: e.target.value})} required>
-                                                <option value="" className="bg-slate-900">Select Athlete</option>
-                                                {members.map(m => <option key={m.id} value={m.id} className="bg-slate-900">@{m.username}</option>)}
-                                            </select>
-                                            <input type="text" placeholder="Dietary Goal" className="w-full bg-white/5 p-4 rounded-2xl border border-white/10 text-white font-bold outline-none focus:border-emerald-500" value={newPlan.goal} onChange={e => setNewPlan({...newPlan, goal: e.target.value})} />
-=======
                                 <h2 className="text-4xl font-black mb-10 text-white">Manual <span className="text-emerald-500">Entry</span></h2>
                                 <form onSubmit={handleCreatePlan} className="space-y-8">
                                     <div className="grid grid-cols-2 gap-8">
@@ -422,7 +358,6 @@ const MealPlanManagement = () => {
                                                 {members.map(m => <option key={m.id} value={m.id} className="bg-slate-900">@{m.username}</option>)}
                                             </select>
                                             <input type="text" placeholder="Dietary Goal" className="w-full bg-white/5 p-4 rounded-2xl border border-white/10 text-white font-bold outline-none focus:border-emerald-500" value={newPlan.goal} onChange={e => setNewPlan({ ...newPlan, goal: e.target.value })} />
->>>>>>> Stashed changes
                                             <div className="bg-slate-950 p-6 rounded-3xl border border-white/5 space-y-4">
                                                 <div className="flex gap-2">
                                                     <select id="foodItemSelector" className="flex-1 bg-white/5 p-3 rounded-xl text-white text-xs outline-none border border-white/10">
@@ -433,19 +368,6 @@ const MealPlanManagement = () => {
                                                     <button type="button" onClick={() => {
                                                         const s = document.getElementById('foodItemSelector');
                                                         const w = document.getElementById('foodWeight');
-<<<<<<< Updated upstream
-                                                        if(!s.value) return;
-                                                        const food = JSON.parse(s.value);
-                                                        const newList = [...selectedFoods, { name: food.name, grams: w.value, cals: (food.caloriesPer100g/100)*w.value }];
-                                                        setSelectedFoods(newList);
-                                                        const totalCals = newList.reduce((a,b) => a+b.cals, 0);
-                                                        const text = newList.map(f => `${f.name}: ${f.grams}g`).join('\n');
-                                                        setNewPlan({...newPlan, dailyCalories: Math.round(totalCals), meals: text});
-                                                    }} className="bg-emerald-600 p-3 rounded-xl text-white"><Plus size={18} /></button>
-                                                </div>
-                                                <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                                                    {selectedFoods.map((f,i) => (
-=======
                                                         if (!s.value) return;
                                                         const food = JSON.parse(s.value);
                                                         const newList = [...selectedFoods, { name: food.name, grams: w.value, cals: (food.caloriesPer100g / 100) * w.value }];
@@ -457,21 +379,14 @@ const MealPlanManagement = () => {
                                                 </div>
                                                 <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                                                     {selectedFoods.map((f, i) => (
->>>>>>> Stashed changes
                                                         <div key={i} className="flex justify-between bg-white/5 p-3 rounded-xl border border-white/5 text-[10px] font-bold">
                                                             <span>{f.name} ({f.grams}g)</span>
                                                             <button type="button" onClick={() => {
                                                                 const updated = selectedFoods.filter((_, idx) => idx !== i);
                                                                 setSelectedFoods(updated);
-<<<<<<< Updated upstream
-                                                                const totalCals = updated.reduce((a,b) => a+b.cals, 0);
-                                                                const text = updated.map(f => `${f.name}: ${f.grams}g`).join('\n');
-                                                                setNewPlan({...newPlan, dailyCalories: Math.round(totalCals), meals: text});
-=======
                                                                 const totalCals = updated.reduce((a, b) => a + b.cals, 0);
                                                                 const text = updated.map(f => `${f.name}: ${f.grams}g`).join('\n');
                                                                 setNewPlan({ ...newPlan, dailyCalories: Math.round(totalCals), meals: text });
->>>>>>> Stashed changes
                                                             }} className="text-red-400"><X size={12} /></button>
                                                         </div>
                                                     ))}
@@ -479,23 +394,14 @@ const MealPlanManagement = () => {
                                             </div>
                                         </div>
                                         <div className="space-y-6">
-<<<<<<< Updated upstream
-                                            <textarea className="w-full bg-white/5 p-6 rounded-[2rem] border border-white/10 text-white font-medium h-48 outline-none focus:border-emerald-500 text-sm" placeholder="Plan Sequence Preview..." value={newPlan.meals} onChange={e => setNewPlan({...newPlan, meals: e.target.value})} required />
-                                            <select className="w-full bg-white/5 p-4 rounded-2xl border border-white/10 text-white font-bold outline-none" value={newPlan.supplementId} onChange={e => setNewPlan({...newPlan, supplementId: e.target.value})}>
-=======
                                             <textarea className="w-full bg-white/5 p-6 rounded-[2rem] border border-white/10 text-white font-medium h-48 outline-none focus:border-emerald-500 text-sm" placeholder="Plan Sequence Preview..." value={newPlan.meals} onChange={e => setNewPlan({ ...newPlan, meals: e.target.value })} required />
                                             <select className="w-full bg-white/5 p-4 rounded-2xl border border-white/10 text-white font-bold outline-none" value={newPlan.supplementId} onChange={e => setNewPlan({ ...newPlan, supplementId: e.target.value })}>
->>>>>>> Stashed changes
                                                 <option value="" className="bg-slate-900">Recommended Supplement</option>
                                                 {supplements.map(s => <option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>)}
                                             </select>
                                         </div>
                                     </div>
-<<<<<<< Updated upstream
-                                    <input type="text" placeholder="Plan Name" className="w-full bg-white/5 p-5 rounded-3xl border border-white/10 text-white font-black text-lg outline-none focus:border-emerald-500" value={newPlan.planName} onChange={e => setNewPlan({...newPlan, planName: e.target.value})} required />
-=======
                                     <input type="text" placeholder="Plan Name" className="w-full bg-white/5 p-5 rounded-3xl border border-white/10 text-white font-black text-lg outline-none focus:border-emerald-500" value={newPlan.planName} onChange={e => setNewPlan({ ...newPlan, planName: e.target.value })} required />
->>>>>>> Stashed changes
                                     <button className="w-full bg-emerald-600 text-white py-5 rounded-3xl font-black text-xl shadow-2xl hover:bg-emerald-500 transition-all active:scale-95">Deploy Strategy</button>
                                 </form>
                             </motion.div>
@@ -509,11 +415,7 @@ const MealPlanManagement = () => {
                         <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-xl">
                             <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900 w-full max-w-lg rounded-[3rem] p-10 border border-white/10 shadow-[0_0_50px_rgba(16,185,129,0.1)]">
                                 <div className="flex items-center gap-4 mb-8">
-<<<<<<< Updated upstream
-                                    <div className="w-16 h-16 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400"><User size={32}/></div>
-=======
                                     <div className="w-16 h-16 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400"><User size={32} /></div>
->>>>>>> Stashed changes
                                     <div>
                                         <h3 className="text-2xl font-black text-white">Bio-Analysis</h3>
                                         <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">@{selectedAImember.username}</p>
@@ -522,73 +424,6 @@ const MealPlanManagement = () => {
                                 <div className="grid grid-cols-2 gap-4 mb-6">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Age</label>
-<<<<<<< Updated upstream
-                                        <input type="number" className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.age || ''} onChange={e => setSelectedAIMember({...selectedAImember, age: e.target.value})} />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Gender</label>
-                                        <input className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.gender || ''} onChange={e => setSelectedAIMember({...selectedAImember, gender: e.target.value})} />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Weight (kg)</label>
-                                        <input type="number" className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.weight || ''} onChange={e => setSelectedAIMember({...selectedAImember, weight: e.target.value})} />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Height (cm)</label>
-                                        <input type="number" className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.height || ''} onChange={e => setSelectedAIMember({...selectedAImember, height: e.target.value})} />
-                                    </div>
-                                </div>
-                                
-                                <div className="space-y-4 mb-10">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Fitness Goal</label>
-                                        <select className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5 outline-none" value={selectedAImember.fitnessGoal || ''} onChange={e => setSelectedAIMember({...selectedAImember, fitnessGoal: e.target.value})}>
-                                            <option value="Weight Loss" className="bg-slate-900">Weight Loss</option>
-                                            <option value="Weight Gain" className="bg-slate-900">Weight Gain</option>
-                                            <option value="Muscle Hypertrophy" className="bg-slate-900">Muscle Hypertrophy</option>
-                                            <option value="Endurance" className="bg-slate-900">Endurance</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Allergies / Dietary Restrictions</label>
-                                        <textarea className="w-full bg-white/5 p-3 rounded-xl text-white font-medium border border-white/5 h-24 text-sm outline-none focus:border-emerald-500 transition-all custom-scrollbar shrink-0" value={selectedAImember.allergies || ''} onChange={e => setSelectedAIMember({...selectedAImember, allergies: e.target.value})} placeholder="None / List allergies..."></textarea>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Health & Medical Details</label>
-                                        <textarea className="w-full bg-white/5 p-3 rounded-xl text-white font-medium border border-white/5 h-24 text-sm outline-none focus:border-emerald-500 transition-all custom-scrollbar shrink-0" value={selectedAImember.healthDetails || ''} onChange={e => setSelectedAIMember({...selectedAImember, healthDetails: e.target.value})} placeholder="Medical conditions, injuries etc..."></textarea>
-                                    </div>
-                                </div>
-                                <div className="flex gap-4">
-                                    <button onClick={() => setShowAIPreview(false)} className="flex-1 py-4 border border-white/10 rounded-2xl font-black text-slate-500">Cancel</button>
-                                    <button onClick={triggerAI} disabled={isGenerating} className="flex-[2] bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
-                                        {isGenerating ? 'Analyzing...' : <><Sparkles size={16}/> Start Generation</>}
-                                    </button>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
-
-                {/* Review Modal */}
-                <AnimatePresence>
-                    {showReviewModal && pendingPlan && (
-                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-xl">
-                            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-900 w-full max-w-2xl rounded-[3rem] p-12 border border-white/10 shadow-2xl overflow-y-auto max-h-[90vh]">
-                                <h3 className="text-3xl font-black text-white mb-8 flex items-center gap-4"><BrainCircuit className="text-emerald-500" size={32} /> Quality Assurance</h3>
-                                <div className="space-y-6 mb-10">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Neural Strategy Name</label>
-                                        <input className="w-full bg-white/5 p-4 rounded-2xl border border-white/10 text-white font-black text-lg" value={pendingPlan.planName} onChange={e => setPendingPlan({...pendingPlan, planName: e.target.value})} />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Sequence Correction</label>
-                                        <textarea className="w-full bg-white/5 p-6 rounded-[2rem] border border-white/10 text-white font-medium min-h-[250px] text-sm" value={pendingPlan.meals} onChange={e => setPendingPlan({...pendingPlan, meals: e.target.value})} />
-                                    </div>
-                                </div>
-                                <div className="flex gap-4">
-                                    <button onClick={() => setShowReviewModal(false)} className="flex-1 py-4 border border-white/10 rounded-2xl font-black text-slate-500">Save Partial</button>
-                                    <button onClick={() => confirmAIPlan(pendingPlan.id)} className="flex-[2] bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-lg shadow-emerald-500/20">Approve & Deploy</button>
-=======
                                         <input type="number" className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.age || ''} onChange={e => setSelectedAIMember({ ...selectedAImember, age: e.target.value })} />
                                     </div>
                                     <div className="space-y-1">
@@ -629,14 +464,11 @@ const MealPlanManagement = () => {
                                     <button onClick={triggerAI} disabled={isGenerating} className="flex-[2] bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
                                         {isGenerating ? 'Analyzing...' : <><Sparkles size={16} /> Start Generation</>}
                                     </button>
->>>>>>> Stashed changes
                                 </div>
                             </motion.div>
                         </div>
                     )}
                 </AnimatePresence>
-<<<<<<< Updated upstream
-=======
 
                 {/* Review Modal */}
                 <AnimatePresence>
@@ -662,7 +494,6 @@ const MealPlanManagement = () => {
                         </div>
                     )}
                 </AnimatePresence>
->>>>>>> Stashed changes
             </main>
         </div>
     );

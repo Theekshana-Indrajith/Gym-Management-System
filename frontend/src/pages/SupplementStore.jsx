@@ -1168,13 +1168,6 @@ const SupplementStore = () => {
                                         </div>
                                         
                                         <div>
-<<<<<<< Updated upstream
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Supplement Facts</p>
-                                            <div className="bg-slate-50 rounded-2xl p-4 grid grid-cols-2 gap-4 border border-slate-100">
-                                                <div>
-                                                    <span className="block text-[10px] text-slate-400 font-bold uppercase">Weight/Volume</span>
-                                                    <span className="text-sm font-black text-slate-900">Standard Pack</span>
-=======
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Supplement Facts & Usage</p>
                                             <div className="bg-slate-50 rounded-2xl p-4 grid grid-cols-2 gap-4 border border-slate-100">
                                                 <div>
@@ -1188,7 +1181,6 @@ const SupplementStore = () => {
                                                 <div className="col-span-2">
                                                     <span className="block text-[10px] text-slate-400 font-bold uppercase">Suggested Use</span>
                                                     <span className="text-sm font-black text-blue-600">{selectedProduct.suggestedUse || "General fitness"}</span>
->>>>>>> Stashed changes
                                                 </div>
                                                 <div>
                                                     <span className="block text-[10px] text-slate-400 font-bold uppercase">Availability</span>
