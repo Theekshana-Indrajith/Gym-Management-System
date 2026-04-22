@@ -650,12 +650,18 @@ const MemberWorkoutTracking = () => {
                                     <div className="space-y-4 mb-10">
                                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Exercise Core</div>
                                         <div className="bg-slate-50 p-6 rounded-3xl text-sm font-bold text-slate-500 leading-relaxed italic border border-slate-100/50 max-h-40 overflow-y-auto scrollbar-hide">
-                                            {plan.exercises?.split('\n').map((ex, i) => (
-                                                <div key={i} className="flex items-center gap-2 mb-2">
-                                                    <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-                                                    {ex}
+                                            {parseExercises(plan.exercises).map((ex, i) => (
+                                                <div key={i} className="flex justify-between items-center gap-2 mb-3 last:mb-0 border-b border-slate-100 pb-2 last:border-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-1.5 h-1.5 bg-blue-500/40 rounded-full"></div>
+                                                        <span className="text-slate-900">{ex.name}</span>
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase">{ex.setsReps}</span>
                                                 </div>
                                             ))}
+                                            {parseExercises(plan.exercises).length === 0 && (
+                                                <p className="text-xs opacity-50">No protocol details available.</p>
+                                            )}
                                         </div>
                                     </div>
 

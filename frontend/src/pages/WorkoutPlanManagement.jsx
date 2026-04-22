@@ -177,6 +177,37 @@ const WorkoutPlanManagement = () => {
 
     const triggerAI = async () => {
         if (!selectedAImember) return;
+
+        // --- Neural Data Validation Protocol ---
+        const age = parseInt(selectedAImember.age);
+        const weight = parseFloat(selectedAImember.weight);
+        const height = parseFloat(selectedAImember.height);
+
+        if (!selectedAImember.gender || selectedAImember.gender.trim() === '') {
+            alert("Protocol Error: Gender identity is required for hormonal balance calculations.");
+            return;
+        }
+
+        if (isNaN(age) || age < 13 || age > 90) {
+            alert("Validation Failed: Age must be between 13 and 90 for safe training recommendations.");
+            return;
+        }
+
+        if (isNaN(weight) || weight < 30 || weight > 300) {
+            alert("Validation Failed: Weight must be between 30kg and 300kg for load calculations.");
+            return;
+        }
+
+        if (isNaN(height) || height < 100 || height > 250) {
+            alert("Validation Failed: Height must be between 100cm and 250cm for biomechanical analysis.");
+            return;
+        }
+
+        if (!selectedAImember.fitnessGoal || selectedAImember.fitnessGoal === '') {
+            alert("Strategic Violation: An optimization objective (Fitness Goal) must be selected.");
+            return;
+        }
+
         setIsGenerating(true);
         try {
             const auth = JSON.parse(localStorage.getItem('auth'));
@@ -513,26 +544,27 @@ const WorkoutPlanManagement = () => {
                                 <div className="grid grid-cols-2 gap-4 mb-6">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Age</label>
-                                        <input type="number" className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.age || ''} onChange={e => setSelectedAIMember({ ...selectedAImember, age: e.target.value })} />
+                                        <input type="number" min="13" max="90" required className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5 focus:border-blue-500 outline-none" value={selectedAImember.age || ''} onChange={e => setSelectedAIMember({ ...selectedAImember, age: e.target.value })} />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Gender</label>
-                                        <input className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.gender || ''} onChange={e => setSelectedAIMember({ ...selectedAImember, gender: e.target.value })} />
+                                        <input required className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5 focus:border-blue-500 outline-none" value={selectedAImember.gender || ''} onChange={e => setSelectedAIMember({ ...selectedAImember, gender: e.target.value })} />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Weight (kg)</label>
-                                        <input type="number" className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.weight || ''} onChange={e => setSelectedAIMember({ ...selectedAImember, weight: e.target.value })} />
+                                        <input type="number" min="30" max="300" required className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5 focus:border-blue-500 outline-none" value={selectedAImember.weight || ''} onChange={e => setSelectedAIMember({ ...selectedAImember, weight: e.target.value })} />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Height (cm)</label>
-                                        <input type="number" className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5" value={selectedAImember.height || ''} onChange={e => setSelectedAIMember({ ...selectedAImember, height: e.target.value })} />
+                                        <input type="number" min="100" max="250" required className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5 focus:border-blue-500 outline-none" value={selectedAImember.height || ''} onChange={e => setSelectedAIMember({ ...selectedAImember, height: e.target.value })} />
                                     </div>
                                 </div>
 
                                 <div className="space-y-4 mb-10">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Strategic Objective</label>
-                                        <select className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5 outline-none" value={selectedAImember.fitnessGoal || ''} onChange={e => setSelectedAIMember({ ...selectedAImember, fitnessGoal: e.target.value })}>
+                                        <select required className="w-full bg-white/5 p-3 rounded-xl text-white font-bold border border-white/5 outline-none focus:border-blue-500" value={selectedAImember.fitnessGoal || ''} onChange={e => setSelectedAIMember({ ...selectedAImember, fitnessGoal: e.target.value })}>
+                                            <option value="" className="bg-slate-900">Select Strategic Objective</option>
                                             <option value="Weight Loss" className="bg-slate-900">Fat Oxidation (Weight Loss)</option>
                                             <option value="Weight Gain" className="bg-slate-900">Mass Accrual (Weight Gain)</option>
                                             <option value="Muscle Hypertrophy" className="bg-slate-900">Muscle Hypertrophy</option>
