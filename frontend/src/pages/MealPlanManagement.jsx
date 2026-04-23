@@ -101,6 +101,24 @@ const MealPlanManagement = () => {
     const handleCreatePlan = async (e) => {
         e.preventDefault();
 
+        // 1. Plan Name Validation
+        if (!newPlan.planName || newPlan.planName.trim().length < 3) {
+            alert("Nutritional Error: Plan Name must be at least 3 characters long.");
+            return;
+        }
+        if (/^\d+$/.test(newPlan.planName)) {
+            alert("Nutritional Error: Plan Name cannot be purely numeric.");
+            return;
+        }
+
+        // 2. Calorie Validation
+        const cals = parseInt(newPlan.dailyCalories);
+        if (isNaN(cals) || cals < 500 || cals > 10000) {
+            alert("Nutritional Error: Daily Calories must be a positive value between 500 and 10,000 kcal.");
+            return;
+        }
+
+        // 3. Meals Content Validation
         if (!newPlan.meals || newPlan.meals.trim().length === 0) {
             alert("Nutritional Error: A dietary regime cannot be empty. Please include meals.");
             return;
@@ -126,7 +144,6 @@ const MealPlanManagement = () => {
 
     const triggerAI = async () => {
         if (!selectedAImember) return;
-<<<<<<< Updated upstream
 
         // --- Bio-Nutritional Validation Protocol ---
         const age = parseInt(selectedAImember.age);
@@ -157,9 +174,6 @@ const MealPlanManagement = () => {
             alert("Strategic Violation: A dietary objective (Fitness Goal) must be selected.");
             return;
         }
-
-=======
->>>>>>> Stashed changes
         setIsGenerating(true);
         try {
             const auth = JSON.parse(localStorage.getItem('auth'));

@@ -113,12 +113,50 @@ const WorkoutPlanManagement = () => {
     const handleCreatePlan = async (e) => {
         e.preventDefault();
 
-        // Validation: Check if exercises are provided
+        // 1. Plan Name Validation
+        if (!newPlan.planName || newPlan.planName.trim().length < 3) {
+            alert("Protocol Violation: Protocol Identifier must be at least 3 characters long.");
+            return;
+        }
+        if (/^\d+$/.test(newPlan.planName)) {
+            alert("Protocol Violation: Protocol Identifier cannot be purely numeric.");
+            return;
+        }
+
+        // 2. Exercise & Volume Validation
         const validExercises = newPlan.exercises.filter(ex => (ex.isManual ? ex.tempName : ex.name).trim() !== '');
         
         if (validExercises.length === 0) {
-            alert("Protocol Violation: You must include at least one valid exercise in the sequence.");
+            alert("Sequence Error: You must include at least one valid movement in the protocol.");
             return;
+        }
+
+        const exerciseNames = new Set();
+        for (const ex of newPlan.exercises) {
+            const exName = (ex.isManual ? ex.tempName : ex.name).trim().toLowerCase();
+            
+            if (exName === '') {
+                alert("Selection Error: One or more exercise entries are missing a designated movement.");
+                return;
+            }
+
+            if (exerciseNames.has(exName)) {
+                alert(`Duplicate Entry: '${exName}' is already included in this protocol. Each movement in a sequence must be unique.`);
+                return;
+            }
+            exerciseNames.add(exName);
+
+            const s = parseInt(ex.sets);
+            const r = parseInt(ex.reps);
+
+            if (isNaN(s) || s <= 0 || s > 20) {
+                alert("Volume Error: Sets must be between 1 and 20.");
+                return;
+            }
+            if (isNaN(r) || r <= 0 || r > 100) {
+                alert("Volume Error: Reps must be between 1 and 100.");
+                return;
+            }
         }
 
         const formattedExercises = newPlan.exercises.map(ex => {
@@ -177,7 +215,6 @@ const WorkoutPlanManagement = () => {
 
     const triggerAI = async () => {
         if (!selectedAImember) return;
-<<<<<<< Updated upstream
 
         // --- Neural Data Validation Protocol ---
         const age = parseInt(selectedAImember.age);
@@ -208,9 +245,6 @@ const WorkoutPlanManagement = () => {
             alert("Strategic Violation: An optimization objective (Fitness Goal) must be selected.");
             return;
         }
-
-=======
->>>>>>> Stashed changes
         setIsGenerating(true);
         try {
             const auth = JSON.parse(localStorage.getItem('auth'));
