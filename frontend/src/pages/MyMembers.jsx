@@ -20,6 +20,7 @@ const MyMembers = () => {
     const [showMessageModal, setShowMessageModal] = useState(false);
     const [selectedMemberForMsg, setSelectedMemberForMsg] = useState(null);
     const [messageText, setMessageText] = useState('');
+    const [workoutPerformance, setWorkoutPerformance] = useState(null);
 
     const fetchMembers = async () => {
         try {
@@ -83,10 +84,19 @@ const MyMembers = () => {
     const fetchMemberProgress = async (member) => {
         try {
             const auth = JSON.parse(localStorage.getItem('auth'));
-            const res = await axios.get(`http://localhost:8080/api/trainer/member/${member.id}/progress`, {
+            
+            // Fetch Biometric Progress
+            const bioRes = await axios.get(`http://localhost:8080/api/trainer/member/${member.id}/progress`, {
                 headers: { Authorization: auth }
             });
-            setProgressData(res.data);
+            setProgressData(bioRes.data);
+
+            // Fetch Workout Performance Logs
+            const perfRes = await axios.get(`http://localhost:8080/api/workout-plans/member/${member.id}/performance`, {
+                headers: { Authorization: auth }
+            });
+            setWorkoutPerformance(perfRes.data);
+
             setSelectedMemberProgress(member);
             setShowProgressModal(true);
         } catch (err) {
@@ -649,6 +659,47 @@ const MyMembers = () => {
                                     </div>
                                     <div className="flex justify-center flex-1">
                                         <RadarChart data={progressData} />
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 bg-slate-50 rounded-[2rem] p-8 border border-slate-100">
+                                    <div className="flex justify-between items-center mb-6 px-2">
+                                        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                                            <Calendar size={20} className="text-blue-500" /> Recent Activity Log
+                                        </h3>
+                                        <div className="px-3 py-1 bg-blue-500/10 text-blue-500 rounded-full text-[10px] font-black uppercase tracking-widest">
+                                            Weekly Stats: {workoutPerformance?.consistencyPercentage?.toFixed(0) || 0}% Consistent
+                                        </div>
+                                    </div>
+                                    <div className="overflow-hidden rounded-2xl border border-slate-200">
+                                        <table className="w-full text-left text-xs">
+                                            <thead>
+                                                <tr className="bg-slate-900 text-white">
+                                                    <th className="px-6 py-4 font-black uppercase tracking-widest">Date</th>
+                                                    <th className="px-6 py-4 font-black uppercase tracking-widest">Protocol Name</th>
+                                                    <th className="px-6 py-4 font-black uppercase tracking-widest text-right">Completion</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 bg-white">
+                                                {workoutPerformance?.logs?.length > 0 ? (
+                                                    workoutPerformance.logs.slice(0, 5).map((log, idx) => (
+                                                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                                                            <td className="px-6 py-4 font-bold text-slate-600">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
+                                                            <td className="px-6 py-4 font-black text-slate-900">{log.planName || 'Standard Routine'}</td>
+                                                            <td className="px-6 py-4 text-right">
+                                                                <span className={`font-black ${log.completionPercentage >= 80 ? 'text-emerald-500' : log.completionPercentage >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
+                                                                    {log.completionPercentage.toFixed(0)}%
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan="3" className="px-6 py-10 text-center text-slate-400 font-bold italic">No recent workout activity logged.</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
 
